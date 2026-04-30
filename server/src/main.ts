@@ -11,7 +11,6 @@ async function listenWithPortFallback(
     try {
       await app.listen(port);
       if (attempt > 0) {
-        // eslint-disable-next-line no-console
         console.warn(
           `Port ${startPort} is in use. Server started on fallback port ${port}.`,
         );
