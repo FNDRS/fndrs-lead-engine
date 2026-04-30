@@ -1,6 +1,6 @@
 import type { Lead, LeadAnalysis, DailyRun, CreateLeadInput } from "@/lib/types"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
 async function fetcher<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {

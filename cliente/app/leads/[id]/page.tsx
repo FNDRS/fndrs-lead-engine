@@ -8,8 +8,6 @@ import { StatusBadge } from "@/components/status-badge"
 import { ScoreBadge } from "@/components/score-badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import Link from "next/link"
 import {
@@ -54,7 +52,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   if (isError) {
     return (
       <div className="p-8">
-        <p className="text-red-400 text-sm">Failed to load lead.</p>
+        <p className="text-[13px] text-red-400">Failed to load lead.</p>
       </div>
     )
   }
@@ -63,37 +61,42 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const analysis = data?.analysis
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-8 max-w-5xl mx-auto space-y-8">
+      {/* Back */}
+      <Link
+        href="/leads"
+        className="inline-flex items-center gap-1.5 text-[12px] text-zinc-600 hover:text-zinc-400 transition-colors"
+      >
+        <ArrowLeft className="h-3 w-3" />
+        Back to Leads
+      </Link>
+
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <Link
-            href="/leads"
-            className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            <ArrowLeft className="h-3 w-3" />
-            Back to Leads
-          </Link>
+      <div className="flex items-start justify-between gap-6">
+        <div className="space-y-2.5 min-w-0">
           {isLoading ? (
-            <Skeleton className="h-7 w-48 bg-zinc-800" />
+            <>
+              <Skeleton className="h-7 w-52 bg-white/[0.05]" />
+              <Skeleton className="h-5 w-32 bg-white/[0.05]" />
+            </>
           ) : (
-            <h1 className="text-xl font-semibold text-zinc-100">{lead?.businessName}</h1>
+            <>
+              <h1 className="text-[24px] font-semibold text-zinc-100 tracking-tight leading-none">
+                {lead?.businessName}
+              </h1>
+              <div className="flex items-center gap-2">
+                {lead && <StatusBadge status={lead.status} />}
+                {lead?.score !== undefined && <ScoreBadge score={lead.score} />}
+              </div>
+            </>
           )}
-          <div className="flex items-center gap-2 flex-wrap">
-            {isLoading ? (
-              <Skeleton className="h-5 w-16 bg-zinc-800" />
-            ) : (
-              lead && <StatusBadge status={lead.status} />
-            )}
-            {lead?.score !== undefined && <ScoreBadge score={lead.score} />}
-          </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <Button
             size="sm"
-            variant="outline"
-            className="gap-1.5 border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            variant="ghost"
+            className="h-8 gap-1.5 px-3 text-[13px] border border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05] hover:border-white/[0.12]"
             onClick={() => contactMutation.mutate()}
             disabled={contactMutation.isPending}
           >
@@ -102,7 +105,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           </Button>
           <Button
             size="sm"
-            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white"
+            className="h-8 gap-1.5 px-3 text-[13px] bg-violet-600 hover:bg-violet-500 text-white shadow-none"
             onClick={() => analyzeMutation.mutate()}
             disabled={analyzeMutation.isPending}
           >
@@ -121,66 +124,77 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      <Separator className="bg-zinc-800" />
+      {/* Divider */}
+      <div className="h-px bg-white/[0.06]" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Business Info */}
-        <div className="space-y-4">
-          <h2 className="text-sm font-medium text-zinc-400">Business Info</h2>
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="pt-5 space-y-3">
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-4 w-full bg-zinc-800" />
-                ))
-              ) : (
-                <>
-                  {lead?.website && (
-                    <InfoRow
-                      icon={Globe}
-                      label="Website"
-                      value={
-                        <a
-                          href={lead.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-violet-400 hover:underline truncate"
-                        >
-                          {lead.website.replace(/^https?:\/\//, "")}
-                        </a>
-                      }
-                    />
-                  )}
-                  {lead?.city && (
-                    <InfoRow icon={MapPin} label="City" value={lead.city} />
-                  )}
-                  {lead?.category && (
-                    <InfoRow icon={Tag} label="Category" value={lead.category} />
-                  )}
-                </>
+      {/* Body */}
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8">
+        {/* Info sidebar */}
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider mb-3">
+            Business Info
+          </p>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full bg-white/[0.05]" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-0 rounded-lg border border-white/[0.07] bg-[#111114] divide-y divide-white/[0.05] overflow-hidden">
+              {lead?.website && (
+                <InfoRow icon={Globe} label="Website">
+                  <a
+                    href={lead.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-400 hover:text-violet-300 transition-colors truncate block"
+                  >
+                    {lead.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  </a>
+                </InfoRow>
               )}
-            </CardContent>
-          </Card>
+              {lead?.city && (
+                <InfoRow icon={MapPin} label="City">
+                  <span className="text-zinc-300">{lead.city}</span>
+                </InfoRow>
+              )}
+              {lead?.category && (
+                <InfoRow icon={Tag} label="Category">
+                  <span className="text-zinc-300">{lead.category}</span>
+                </InfoRow>
+              )}
+              {!lead?.website && !lead?.city && !lead?.category && (
+                <div className="px-4 py-5 text-[12px] text-zinc-600">No info available</div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Analysis */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-sm font-medium text-zinc-400">Analysis</h2>
+        <div className="space-y-3">
+          <p className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider mb-3">
+            Analysis
+          </p>
+
           {analyzeMutation.isPending && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 space-y-3">
-              <Skeleton className="h-4 w-full bg-zinc-800" />
-              <Skeleton className="h-4 w-3/4 bg-zinc-800" />
-              <Skeleton className="h-4 w-5/6 bg-zinc-800" />
+            <div className="rounded-lg border border-white/[0.07] bg-[#111114] p-5 space-y-3">
+              <Skeleton className="h-3.5 w-full bg-white/[0.05]" />
+              <Skeleton className="h-3.5 w-4/5 bg-white/[0.05]" />
+              <Skeleton className="h-3.5 w-3/4 bg-white/[0.05]" />
             </div>
           )}
+
           {!analyzeMutation.isPending && analysis ? (
             <AnalysisPanel analysis={analysis} />
           ) : !analyzeMutation.isPending && (
-            <div className="rounded-lg border border-dashed border-zinc-800 p-10 text-center">
-              <Zap className="h-8 w-8 text-zinc-700 mx-auto mb-3" />
-              <p className="text-sm text-zinc-500">No analysis yet.</p>
-              <p className="text-xs text-zinc-600 mt-1">
-                Click &ldquo;Analyze&rdquo; to generate insights.
+            <div className="rounded-xl border border-dashed border-white/[0.08] p-12 text-center">
+              <div className="h-10 w-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
+                <Zap className="h-4 w-4 text-zinc-700" />
+              </div>
+              <p className="text-[13px] text-zinc-500 font-medium">No analysis yet</p>
+              <p className="text-[12px] text-zinc-700 mt-1">
+                Click &ldquo;Analyze&rdquo; to generate AI insights
               </p>
             </div>
           )}
@@ -193,18 +207,20 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 function InfoRow({
   icon: Icon,
   label,
-  value,
+  children,
 }: {
   icon: React.ElementType
   label: string
-  value: React.ReactNode
+  children: React.ReactNode
 }) {
   return (
-    <div className="flex items-start gap-2.5">
-      <Icon className="h-3.5 w-3.5 text-zinc-600 mt-0.5 shrink-0" />
+    <div className="flex items-start gap-3 px-4 py-3">
+      <div className="h-6 w-6 rounded-md bg-white/[0.04] flex items-center justify-center shrink-0 mt-0.5">
+        <Icon className="h-3 w-3 text-zinc-600" />
+      </div>
       <div className="min-w-0">
-        <p className="text-xs text-zinc-500">{label}</p>
-        <div className="text-sm text-zinc-300 mt-0.5">{value}</div>
+        <p className="text-[11px] text-zinc-600 font-medium">{label}</p>
+        <div className="text-[13px] mt-0.5 truncate">{children}</div>
       </div>
     </div>
   )

@@ -1,5 +1,7 @@
 generator client {
   provider = "prisma-client-js"
+  // With pnpm workspaces, generating to node_modules/.prisma keeps @prisma/client resolution working.
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
