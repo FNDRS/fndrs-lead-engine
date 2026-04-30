@@ -71,11 +71,11 @@ export default function LeadsPage() {
   })
 
   const actions = (lead: Lead) => (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
       <Button
         size="sm"
         variant="ghost"
-        className="h-7 px-2 text-xs text-zinc-400 hover:text-violet-400 hover:bg-violet-500/10"
+        className="h-6 px-2 text-[11px] text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10"
         onClick={() => analyzeMutation.mutate(lead.id)}
         disabled={analyzeMutation.isPending}
       >
@@ -85,7 +85,7 @@ export default function LeadsPage() {
       <Button
         size="sm"
         variant="ghost"
-        className="h-7 px-2 text-xs text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10"
+        className="h-6 px-2 text-[11px] text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10"
         onClick={() => contactMutation.mutate(lead.id)}
         disabled={contactMutation.isPending}
       >
@@ -97,25 +97,26 @@ export default function LeadsPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-100">Leads</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">
-            {filtered.length} of {leads.length} leads
+          <h1 className="text-[22px] font-semibold text-zinc-100 tracking-tight">Leads</h1>
+          <p className="text-[13px] text-zinc-600 mt-0.5">
+            {isLoading ? "Loading..." : `${filtered.length} of ${leads.length} leads`}
           </p>
         </div>
         <CreateLeadDialog />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-600" />
           <Input
-            placeholder="Search leads..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-8 w-48 bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 text-sm"
+            className="pl-8 h-8 w-44 bg-white/[0.04] border-white/[0.08] text-zinc-200 placeholder:text-zinc-700 text-[13px] focus-visible:ring-violet-500/30 focus-visible:border-violet-500/50"
           />
         </div>
 
@@ -142,7 +143,7 @@ export default function LeadsPage() {
           onValueChange={(v) => setScoreFilter(v ?? ALL)}
           placeholder="Score"
           options={["high", "medium", "low"]}
-          labels={{ high: "Score ≥ 80", medium: "Score 60–79", low: "Score < 60" }}
+          labels={{ high: "≥ 80", medium: "60–79", low: "< 60" }}
         />
       </div>
 
@@ -166,15 +167,15 @@ function FilterSelect({
 }) {
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="h-8 w-auto min-w-28 bg-zinc-800 border-zinc-700 text-zinc-400 text-sm focus:ring-0">
+      <SelectTrigger className="h-8 w-auto min-w-[120px] bg-white/[0.04] border-white/[0.08] text-zinc-400 text-[13px] focus:ring-0 focus:border-white/[0.12]">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="bg-zinc-800 border-zinc-700">
-        <SelectItem value={ALL} className="text-zinc-400 text-sm focus:bg-zinc-700 focus:text-zinc-100">
+      <SelectContent className="bg-[#1a1a1f] border-white/[0.08] shadow-xl">
+        <SelectItem value={ALL} className="text-zinc-400 text-[13px] focus:bg-white/[0.06] focus:text-zinc-200">
           All {placeholder}s
         </SelectItem>
         {options.map((o) => (
-          <SelectItem key={o} value={o} className="text-zinc-300 text-sm capitalize focus:bg-zinc-700 focus:text-zinc-100">
+          <SelectItem key={o} value={o} className="text-zinc-300 text-[13px] capitalize focus:bg-white/[0.06] focus:text-zinc-200">
             {labels?.[o] ?? o}
           </SelectItem>
         ))}

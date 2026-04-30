@@ -12,7 +12,7 @@ Public monorepo for FNDRS lead management and analysis.
 
 ```
 fndrs-lead-engine/
-├── cliente/        # frontend app
+├── cliente/        # frontend app (client)
 └── server/         # backend API
 ```
 
@@ -38,7 +38,7 @@ pnpm dev
 This starts:
 
 - Frontend at `http://localhost:3000`
-- Backend at `http://localhost:3001`
+- Backend at `http://localhost:3001` (auto-fallback if the port is busy)
 
 ## Public repository
 

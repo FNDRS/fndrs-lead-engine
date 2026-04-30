@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Play, Zap } from "lucide-react"
+import { LayoutDashboard, Users, Play } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const nav = [
@@ -13,31 +13,70 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname()
+
   return (
-    <aside className="w-56 shrink-0 border-r border-zinc-800 bg-zinc-900 flex flex-col">
-      <div className="h-14 flex items-center gap-2 px-4 border-b border-zinc-800">
-        <Zap className="h-4 w-4 text-violet-400" />
-        <span className="text-sm font-semibold tracking-tight text-zinc-100">
-          FNDRS Lead Engine
-        </span>
-      </div>
-      <nav className="flex-1 p-3 space-y-0.5">
-        {nav.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-              pathname.startsWith(href)
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60"
-            )}
+    <aside className="w-52 shrink-0 flex flex-col border-r border-white/[0.06] bg-[#0c0c0f]">
+      {/* Logo */}
+      <div className="h-14 flex items-center gap-2.5 px-4">
+        <div className="h-6 w-6 rounded-md bg-violet-600 flex items-center justify-center shrink-0">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            className="text-white"
           >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        ))}
+            <path
+              d="M6 1L10.5 9H1.5L6 1Z"
+              fill="currentColor"
+              fillOpacity="0.9"
+            />
+          </svg>
+        </div>
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-zinc-100 leading-none tracking-tight">
+            Lead Engine
+          </p>
+          <p className="text-[10px] text-zinc-600 mt-0.5 tracking-wide uppercase font-medium">
+            FNDRS
+          </p>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-white/[0.06] mx-3" />
+
+      {/* Nav */}
+      <nav className="flex-1 p-2 pt-3 space-y-0.5">
+        {nav.map(({ href, label, icon: Icon }) => {
+          const active = pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-all duration-150",
+                active
+                  ? "bg-white/[0.08] text-zinc-100"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
+              )}
+            >
+              <Icon
+                className={cn(
+                  "h-3.5 w-3.5 transition-colors",
+                  active ? "text-violet-400" : "text-zinc-600 group-hover:text-zinc-400"
+                )}
+              />
+              {label}
+            </Link>
+          )
+        })}
       </nav>
+
+      {/* Footer */}
+      <div className="p-3 border-t border-white/[0.06]">
+        <p className="text-[10px] text-zinc-700 font-mono">v0.1 · internal</p>
+      </div>
     </aside>
   )
 }

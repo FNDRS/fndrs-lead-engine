@@ -1,10 +1,7 @@
 import type { Metadata } from "next"
-import { Geist } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
 import { Sidebar } from "@/components/sidebar"
-
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
 
 export const metadata: Metadata = {
   title: "FNDRS Lead Engine",
@@ -13,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="h-full bg-zinc-950 text-zinc-100 antialiased">
+    <html lang="en" className="dark h-full">
+      <body className="h-full bg-[#08080a] text-zinc-100 antialiased">
         <Providers>
           <div className="flex h-full">
             <Sidebar />

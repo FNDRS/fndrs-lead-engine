@@ -13,7 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScoreBadge } from "@/components/score-badge"
 import { StatusBadge } from "@/components/status-badge"
-import { Globe, Building2 } from "lucide-react"
+import { Globe } from "lucide-react"
 
 interface LeadTableProps {
   leads: Lead[]
@@ -23,13 +23,13 @@ interface LeadTableProps {
 
 function SkeletonRows() {
   return Array.from({ length: 5 }).map((_, i) => (
-    <TableRow key={i} className="border-zinc-800">
-      <TableCell><Skeleton className="h-4 w-36 bg-zinc-800" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-24 bg-zinc-800" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-20 bg-zinc-800" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-16 bg-zinc-800" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-12 bg-zinc-800" /></TableCell>
-      <TableCell />
+    <TableRow key={i} className="border-white/[0.05] hover:bg-transparent">
+      <TableCell><Skeleton className="h-3.5 w-40 bg-white/[0.05]" /></TableCell>
+      <TableCell><Skeleton className="h-3.5 w-24 bg-white/[0.05]" /></TableCell>
+      <TableCell><Skeleton className="h-3.5 w-20 bg-white/[0.05]" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-16 rounded-full bg-white/[0.05]" /></TableCell>
+      <TableCell><Skeleton className="h-5 w-10 rounded-full bg-white/[0.05]" /></TableCell>
+      {<TableCell />}
     </TableRow>
   ))
 }
@@ -38,62 +38,72 @@ export function LeadTable({ leads, isLoading, actions }: LeadTableProps) {
   const router = useRouter()
 
   return (
-    <div className="rounded-lg border border-zinc-800 overflow-hidden">
+    <div className="rounded-lg border border-white/[0.07] overflow-hidden bg-[#111114]">
       <Table>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
-            <TableHead className="text-zinc-400">Business</TableHead>
-            <TableHead className="text-zinc-400">Category</TableHead>
-            <TableHead className="text-zinc-400">City</TableHead>
-            <TableHead className="text-zinc-400">Status</TableHead>
-            <TableHead className="text-zinc-400">Score</TableHead>
-            {actions && <TableHead />}
+          <TableRow className="border-white/[0.07] hover:bg-transparent">
+            <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-10">
+              Business
+            </TableHead>
+            <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-10">
+              Category
+            </TableHead>
+            <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-10">
+              City
+            </TableHead>
+            <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-10">
+              Status
+            </TableHead>
+            <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-10">
+              Score
+            </TableHead>
+            {actions && <TableHead className="h-10" />}
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <SkeletonRows />
           ) : leads.length === 0 ? (
-            <TableRow className="border-zinc-800">
-              <TableCell colSpan={6} className="text-center py-12 text-zinc-500">
-                No leads found
+            <TableRow className="border-white/[0.05] hover:bg-transparent">
+              <TableCell colSpan={6} className="py-16 text-center">
+                <p className="text-[13px] text-zinc-500">No leads found</p>
+                <p className="text-xs text-zinc-700 mt-1">Try adjusting your filters</p>
               </TableCell>
             </TableRow>
           ) : (
             leads.map((lead) => (
               <TableRow
                 key={lead.id}
-                className="border-zinc-800 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                className="border-white/[0.05] cursor-pointer hover:bg-white/[0.03] transition-colors group"
                 onClick={() => router.push(`/leads/${lead.id}`)}
               >
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
-                    <span className="font-medium text-zinc-100">{lead.businessName}</span>
-                  </div>
+                <TableCell className="py-3">
+                  <p className="text-[13px] font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors">
+                    {lead.businessName}
+                  </p>
                   {lead.website && (
                     <div className="flex items-center gap-1 mt-0.5">
-                      <Globe className="h-3 w-3 text-zinc-600" />
-                      <span className="text-xs text-zinc-500 truncate max-w-[180px]">
-                        {lead.website.replace(/^https?:\/\//, "")}
+                      <Globe className="h-2.5 w-2.5 text-zinc-600 shrink-0" />
+                      <span className="text-[11px] text-zinc-600 truncate max-w-[200px]">
+                        {lead.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                       </span>
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="text-zinc-400 text-sm">
-                  {lead.category ?? "—"}
+                <TableCell className="text-[13px] text-zinc-500 py-3">
+                  {lead.category ?? <span className="text-zinc-700">—</span>}
                 </TableCell>
-                <TableCell className="text-zinc-400 text-sm">
-                  {lead.city ?? "—"}
+                <TableCell className="text-[13px] text-zinc-500 py-3">
+                  {lead.city ?? <span className="text-zinc-700">—</span>}
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-3">
                   <StatusBadge status={lead.status} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-3">
                   <ScoreBadge score={lead.score} />
                 </TableCell>
                 {actions && (
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     {actions(lead)}
                   </TableCell>
                 )}

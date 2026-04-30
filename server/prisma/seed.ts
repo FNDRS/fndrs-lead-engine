@@ -1,13 +1,16 @@
 import 'dotenv/config';
+import path from 'node:path';
+import Database from 'better-sqlite3';
+import { PrismaBetterSQLite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient, LeadStatus, RunStatus } from '@prisma/client';
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const databaseUrl = process.env.DATABASE_URL ?? 'file:./dev.db';
+const sqlitePath = databaseUrl.startsWith('file:')
+  ? databaseUrl.slice('file:'.length)
+  : databaseUrl;
+const sqlite = new Database(path.resolve(process.cwd(), sqlitePath));
+const adapter = new PrismaBetterSQLite3(sqlite);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Minimal seed for local dev.
