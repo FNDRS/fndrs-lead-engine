@@ -49,6 +49,11 @@ export function AnalysisPanel({ analysis }: { analysis: LeadAnalysis }) {
             Summary
           </span>
           <div className="flex items-center gap-2 shrink-0">
+            {typeof analysis.reanalysisCount === "number" && (
+              <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300 uppercase tracking-wide">
+                Re-analyses: {analysis.reanalysisCount}
+              </span>
+            )}
             <span className="text-[11px] text-zinc-600">Score</span>
             <ScoreBadge score={analysis.score} />
           </div>
@@ -117,7 +122,7 @@ export function AnalysisPanel({ analysis }: { analysis: LeadAnalysis }) {
             )}
           </Button>
         </div>
-        <pre className="px-4 py-4 text-[13px] text-zinc-300 whitespace-pre-wrap font-sans leading-relaxed">
+        <pre className="px-4 py-4 text-[13px] text-zinc-300 whitespace-pre-wrap font-sans leading-loose">
           {analysis.outreachMessage}
         </pre>
       </div>
@@ -125,7 +130,7 @@ export function AnalysisPanel({ analysis }: { analysis: LeadAnalysis }) {
       {/* Call Simulation */}
       {analysis.callSimulation && (
         <Section title="Call Simulation" icon={PhoneCall} accent="text-amber-400">
-          <pre className="text-[13px] text-zinc-300 whitespace-pre-wrap font-sans leading-relaxed">
+          <pre className="text-[13px] text-zinc-300 whitespace-pre-wrap font-sans leading-loose">
             {analysis.callSimulation}
           </pre>
         </Section>

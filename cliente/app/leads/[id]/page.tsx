@@ -1,6 +1,6 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getLead, analyzeLead, updateLead } from "@/services/api"
 import { AnalysisPanel } from "@/components/analysis-panel"
@@ -24,6 +24,7 @@ import {
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const qc = useQueryClient()
+  const [thinkingSeconds, setThinkingSeconds] = useState(0)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["lead", id],
@@ -60,6 +61,17 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
   const lead = data?.lead
   const analysis = data?.analysis
+
+  useEffect(() => {
+    if (!analyzeMutation.isPending) {
+      setThinkingSeconds(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setThinkingSeconds((s) => s + 1)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [analyzeMutation.isPending])
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8">
@@ -189,10 +201,23 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           </p>
 
           {analyzeMutation.isPending && (
-            <div className="rounded-lg border border-white/[0.07] bg-[#111114] p-5 space-y-3">
-              <Skeleton className="h-3.5 w-full bg-white/[0.05]" />
-              <Skeleton className="h-3.5 w-4/5 bg-white/[0.05]" />
-              <Skeleton className="h-3.5 w-3/4 bg-white/[0.05]" />
+            <div className="rounded-lg border border-white/[0.07] bg-[#111114] p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-zinc-300 tracking-wide">
+                  Nebulizing analysis...
+                </p>
+                <p className="text-[11px] text-zinc-500 tabular-nums">
+                  {thinkingSeconds}s
+                </p>
+              </div>
+              <ThinkingRow text="Reading website context" />
+              <ThinkingRow text="Understanding business and technical needs" />
+              <ThinkingRow text="Generating outreach and call simulation" />
+              <div className="pt-2">
+                <div className="h-1.5 w-full rounded-full bg-white/[0.05] overflow-hidden">
+                  <div className="h-full w-1/3 bg-violet-500/70 animate-pulse" />
+                </div>
+              </div>
             </div>
           )}
 
@@ -211,6 +236,15 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function ThinkingRow({ text }: { text: string }) {
+  return (
+    <div className="flex items-center gap-2 text-[13px] text-zinc-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
+      <span>{text}</span>
     </div>
   )
 }

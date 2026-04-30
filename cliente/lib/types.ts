@@ -16,6 +16,7 @@ export interface LeadAnalysis {
   suggestedOffer: string
   outreachMessage: string
   callSimulation?: string
+  reanalysisCount?: number
   score: number
 }
 

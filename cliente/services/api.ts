@@ -8,8 +8,21 @@ async function fetcher<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   })
   if (!res.ok) {
-    const error = await res.text().catch(() => res.statusText)
-    throw new Error(error || `Request failed: ${res.status}`)
+    let message = `Request failed: ${res.status}`
+    try {
+      const data = await res.json()
+      if (typeof data?.message === "string" && data.message.trim()) {
+        message = data.message
+      } else if (Array.isArray(data?.message) && data.message.length > 0) {
+        message = data.message.join(", ")
+      } else if (typeof data?.error === "string" && data.error.trim()) {
+        message = data.error
+      }
+    } catch {
+      const fallback = await res.text().catch(() => res.statusText)
+      if (fallback) message = fallback
+    }
+    throw new Error(message)
   }
   return res.json()
 }

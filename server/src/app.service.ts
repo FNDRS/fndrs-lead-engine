@@ -11,59 +11,29 @@ import {
   Lead as PrismaLead,
   LeadAnalysis as PrismaLeadAnalysis,
   LeadStatus as PrismaLeadStatus,
-  Prisma,
   PrismaClient,
   RunStatus as PrismaRunStatus,
 } from '@prisma/client';
+import { LeadAnalysisService } from './lead-analysis.service';
 import { DiscoveredLead, LeadDiscoveryService } from './lead-discovery.service';
-
-export type LeadStatus = 'new' | 'analyzed' | 'contacted' | 'rejected';
-export type RunStatus = 'running' | 'completed' | 'failed';
-
-export interface Lead {
-  id: string;
-  businessName: string;
-  website?: string;
-  phone?: string;
-  category?: string;
-  city?: string;
-  status: LeadStatus;
-  score?: number;
-}
-
-export interface LeadAnalysis {
-  summary: string;
-  problems: string[];
-  opportunities: string[];
-  suggestedOffer: string;
-  outreachMessage: string;
-  callSimulation?: string;
-  score: number;
-}
-
-export interface DailyRun {
-  id: string;
-  createdAt: string;
-  status: RunStatus;
-  leadsFound?: number;
-  leadsProcessed?: number;
-  errors?: number;
-}
-
-export interface CreateLeadInput {
-  businessName: string;
-  website?: string;
-  phone?: string;
-  category?: string;
-  city?: string;
-}
+import type {
+  CreateLeadInput,
+  DailyRun,
+  Lead,
+  LeadAnalysis,
+  LeadStatus,
+  RunStatus,
+} from './lead.types';
 
 @Injectable()
 export class AppService implements OnModuleDestroy {
   private readonly logger = new Logger(AppService.name);
   private readonly prisma: PrismaClient;
 
-  constructor(private readonly leadDiscovery: LeadDiscoveryService) {
+  constructor(
+    private readonly leadDiscovery: LeadDiscoveryService,
+    private readonly leadAnalysis: LeadAnalysisService,
+  ) {
     const databaseUrl = process.env.DATABASE_URL ?? 'file:./dev.db';
     const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
     this.prisma = new PrismaClient({ adapter });
@@ -140,56 +110,52 @@ export class AppService implements OnModuleDestroy {
       throw new NotFoundException('Lead not found');
     }
 
-    const score = this.computeScore(lead);
-    const problems = [
-      'No clear conversion-focused CTA on website.',
-      'Inconsistent review/reputation signals.',
-    ];
-    const opportunities = [
-      'Improve local SEO with service + city pages.',
-      'Add clearer offer and booking/contact funnel.',
-    ];
-    const summary = `${lead.businessName} muestra buen potencial de captacion local en ${lead.city ?? 'su mercado principal'}.`;
-    const suggestedOffer =
-      'Optimizacion de conversion en sitio web + paquete inicial de SEO local.';
-    const outreachMessage = `Hola ${lead.businessName}, estuve revisando su presencia digital y veo oportunidades claras para generar mas leads calificados desde web y Google Maps. ${lead.phone ? `Vi este numero de contacto: ${lead.phone}. ` : ''}Si te parece, te comparto un plan rapido de 3 acciones para empezar esta semana.`;
-    const callSimulation = [
-      `Asesor: Hola, ¿hablo con la persona encargada de ventas o marketing en ${lead.businessName}?`,
-      'Cliente: Si, adelante.',
-      `Asesor: Excelente, te llamo porque detectamos oportunidades para generar mas leads desde su presencia digital${lead.phone ? ` y tenemos este numero de contacto registrado: ${lead.phone}` : ''}.`,
-      'Asesor: En menos de 2 semanas podemos mejorar conversion web y visibilidad local con un plan de 3 pasos.',
-      'Cliente: ¿Que necesitan de mi parte?',
-      'Asesor: Solo 15 minutos para revisar su situacion actual y proponerte acciones concretas con impacto rapido.',
-      'Asesor: ¿Te va bien agendarlo manana por la tarde?',
-    ].join('\n');
+    const existingAnalysis = await this.prisma.leadAnalysis.findUnique({
+      where: { leadId: id },
+      select: { technicalFindings: true },
+    });
+    const previousRuns = existingAnalysis
+      ? this.leadAnalysis.extractAnalysisRuns(existingAnalysis.technicalFindings)
+      : 0;
+    const analysisRuns = previousRuns + 1;
+
+    const ai = await this.leadAnalysis.generate(lead);
     const analysis = await this.prisma.leadAnalysis.upsert({
       where: { leadId: id },
       update: {
-        summary,
-        problems,
-        opportunities,
-        suggestedOffer,
-        outreachMessage,
-        technicalFindings: { callSimulation },
-        rawAiResponse: JSON.stringify({ source: 'rule-based-analysis' }),
-        score,
+        summary: ai.summary,
+        problems: ai.problems,
+        opportunities: ai.opportunities,
+        suggestedOffer: ai.suggestedOffer,
+        outreachMessage: ai.outreachMessage,
+        technicalFindings: {
+          callSimulation: ai.callSimulation,
+          websiteContextUsed: ai.websiteContextUsed,
+          analysisRuns,
+        },
+        rawAiResponse: ai.rawAiResponse,
+        score: ai.score,
       },
       create: {
         leadId: id,
-        summary,
-        problems,
-        opportunities,
-        suggestedOffer,
-        outreachMessage,
-        technicalFindings: { callSimulation },
-        rawAiResponse: JSON.stringify({ source: 'rule-based-analysis' }),
-        score,
+        summary: ai.summary,
+        problems: ai.problems,
+        opportunities: ai.opportunities,
+        suggestedOffer: ai.suggestedOffer,
+        outreachMessage: ai.outreachMessage,
+        technicalFindings: {
+          callSimulation: ai.callSimulation,
+          websiteContextUsed: ai.websiteContextUsed,
+          analysisRuns,
+        },
+        rawAiResponse: ai.rawAiResponse,
+        score: ai.score,
       },
     });
 
     await this.prisma.lead.update({
       where: { id },
-      data: { status: PrismaLeadStatus.ANALYZED, score },
+      data: { status: PrismaLeadStatus.ANALYZED, score: ai.score },
     });
 
     return { analysis: this.mapAnalysis(analysis) };
@@ -234,7 +200,9 @@ export class AppService implements OnModuleDestroy {
       for (const lead of discovered) {
         const isDuplicate = await this.checkDuplicateLead(lead);
         if (isDuplicate) {
-          this.logger.debug(`Skipping duplicate: ${lead.businessName} (${lead.city})`);
+          this.logger.debug(
+            `Skipping duplicate: ${lead.businessName} (${lead.city})`,
+          );
           continue;
         }
 
@@ -252,12 +220,18 @@ export class AppService implements OnModuleDestroy {
           },
         });
         createdCount++;
-        this.logger.debug(`Created: ${lead.businessName} (score ${lead.initialScore})`);
+        this.logger.debug(
+          `Created: ${lead.businessName} (score ${lead.initialScore})`,
+        );
       }
 
       const skipped = discoveredCount - createdCount;
-      notes.push(`Saved ${createdCount} new leads. Skipped ${skipped} duplicates.`);
-      this.logger.log(`Saved ${createdCount} new leads, ${skipped} duplicates skipped.`);
+      notes.push(
+        `Saved ${createdCount} new leads. Skipped ${skipped} duplicates.`,
+      );
+      this.logger.log(
+        `Saved ${createdCount} new leads, ${skipped} duplicates skipped.`,
+      );
 
       // 4. Mark run COMPLETED
       const updated = await this.prisma.dailyRun.update({
@@ -336,15 +310,11 @@ export class AppService implements OnModuleDestroy {
 
     // businessName + city — both must match
     orConditions.push({
-      AND: [
-        { businessName: lead.businessName },
-        { city: lead.city ?? null },
-      ],
+      AND: [{ businessName: lead.businessName }, { city: lead.city ?? null }],
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const existing = await this.prisma.lead.findFirst({
-      where: { OR: orConditions } as any,
+      where: { OR: orConditions },
       select: { id: true },
     });
 
@@ -375,21 +345,14 @@ export class AppService implements OnModuleDestroy {
         : [],
       suggestedOffer: analysis.suggestedOffer,
       outreachMessage: analysis.outreachMessage,
-      callSimulation: this.extractCallSimulation(analysis.technicalFindings),
+      callSimulation: this.leadAnalysis.extractCallSimulation(
+        analysis.technicalFindings,
+      ),
+      reanalysisCount: this.leadAnalysis.extractReanalysisCount(
+        analysis.technicalFindings,
+      ),
       score: analysis.score,
     };
-  }
-
-  private extractCallSimulation(technicalFindings: Prisma.JsonValue): string | undefined {
-    if (
-      technicalFindings &&
-      typeof technicalFindings === 'object' &&
-      'callSimulation' in technicalFindings &&
-      typeof technicalFindings.callSimulation === 'string'
-    ) {
-      return technicalFindings.callSimulation;
-    }
-    return undefined;
   }
 
   private mapRun(run: {
@@ -423,13 +386,5 @@ export class AppService implements OnModuleDestroy {
       default:
         return PrismaLeadStatus.NEW;
     }
-  }
-
-  private computeScore(lead: PrismaLead) {
-    let score = 55;
-    if (lead.website) score += 15;
-    if (lead.category) score += 10;
-    if (lead.city) score += 10;
-    return Math.min(95, score);
   }
 }

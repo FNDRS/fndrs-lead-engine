@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import type { CreateLeadInput, Lead } from './app.service';
+import type { CreateLeadInput, Lead } from './lead.types';
 
 @Controller()
 export class AppController {
