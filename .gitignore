@@ -16,9 +16,14 @@
 # next.js
 /.next/
 /out/
+cliente/.next/
+cliente/out/
 
 # production
 /build
+server/dist
+server/dev.db
+server/dev.db-journal
 
 # misc
 .DS_Store

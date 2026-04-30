@@ -1,20 +1,45 @@
 # FNDRS Lead Engine
 
-Herramienta para gestionar y analizar leads con un frontend en Next.js y un backend en NestJS.
+Public monorepo for FNDRS lead management and analysis.
 
 ## Stack
 
-- Frontend: Next.js + React
+- Frontend: Next.js
 - Backend: NestJS
 - Package manager: pnpm
 
-## Ejecutar localmente
+## Structure
+
+```
+fndrs-lead-engine/
+├── cliente/        # frontend app
+└── server/         # backend API
+```
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm
+
+### Install
 
 ```bash
 pnpm install
+```
+
+### Run everything
+
+```bash
 pnpm dev
 ```
 
-## Repositorio público
+This starts:
 
-Este proyecto está publicado como repositorio público en la organización `fndrs`.
+- Frontend at `http://localhost:3000`
+- Backend at `http://localhost:3001`
+
+## Public repository
+
+Published under the FNDRS GitHub organization.

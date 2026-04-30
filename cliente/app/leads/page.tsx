@@ -121,25 +121,25 @@ export default function LeadsPage() {
 
         <FilterSelect
           value={statusFilter}
-          onValueChange={setStatusFilter}
+          onValueChange={(v) => setStatusFilter(v ?? ALL)}
           placeholder="Status"
           options={statuses}
         />
         <FilterSelect
           value={cityFilter}
-          onValueChange={setCityFilter}
+          onValueChange={(v) => setCityFilter(v ?? ALL)}
           placeholder="City"
           options={cities}
         />
         <FilterSelect
           value={categoryFilter}
-          onValueChange={setCategoryFilter}
+          onValueChange={(v) => setCategoryFilter(v ?? ALL)}
           placeholder="Category"
           options={categories}
         />
         <FilterSelect
           value={scoreFilter}
-          onValueChange={setScoreFilter}
+          onValueChange={(v) => setScoreFilter(v ?? ALL)}
           placeholder="Score"
           options={["high", "medium", "low"]}
           labels={{ high: "Score ≥ 80", medium: "Score 60–79", low: "Score < 60" }}
@@ -159,7 +159,7 @@ function FilterSelect({
   labels,
 }: {
   value: string
-  onValueChange: (v: string) => void
+  onValueChange: (v: string | null) => void
   placeholder: string
   options: string[]
   labels?: Record<string, string>

@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum LeadStatus {
+  NEW
+  ANALYZED
+  CONTACTED
+  REJECTED
+}
+
+enum RunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Lead {
+  id           String      @id @default(cuid())
+  businessName String
+  category     String?
+  city         String?
+  country      String?
+  website      String?
+  phone        String?
+  email        String?
+  instagram    String?
+  linkedin     String?
+  source       String?
+  status       LeadStatus  @default(NEW)
+  score        Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  analysis LeadAnalysis?
+}
+
+model LeadAnalysis {
+  id               String   @id @default(cuid())
+  leadId           String   @unique
+  lead             Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  summary          String
+  problems         Json
+  opportunities    Json
+  suggestedOffer   String
+  outreachMessage  String
+  technicalFindings Json
+  score            Int
+  rawAiResponse    String
+  createdAt        DateTime @default(now())
+}
+
+model DailyRun {
+  id            String    @id @default(cuid())
+  date          DateTime  @unique
+  status        RunStatus
+  totalFound    Int       @default(0)
+  totalAnalyzed Int       @default(0)
+  notes         String?
+  createdAt     DateTime  @default(now())
+}
