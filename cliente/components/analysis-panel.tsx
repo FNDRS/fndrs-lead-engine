@@ -4,9 +4,30 @@ import { useState } from "react"
 import type { LeadAnalysis } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { ScoreBadge } from "@/components/score-badge"
-import { AlertTriangle, Lightbulb, Package, MessageSquare, PhoneCall, Copy, Check } from "lucide-react"
+import { AlertTriangle, Lightbulb, Package, MessageSquare, PhoneCall, Copy, Check, User, Briefcase } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+
+type CallTurn = { speaker: "me" | "client" | "narration"; text: string }
+
+function parseCallSimulation(raw: string): CallTurn[] {
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  return lines.map((line) => {
+    const meMatch = line.match(/^(yo|asesor|tu)\s*:\s*(.*)$/i)
+    if (meMatch) {
+      return { speaker: "me", text: meMatch[2].trim() }
+    }
+    const clientMatch = line.match(/^(cliente|prospecto)\s*:\s*(.*)$/i)
+    if (clientMatch) {
+      return { speaker: "client", text: clientMatch[2].trim() }
+    }
+    return { speaker: "narration", text: line }
+  })
+}
 
 function Section({
   title,
@@ -129,12 +150,111 @@ export function AnalysisPanel({ analysis }: { analysis: LeadAnalysis }) {
 
       {/* Call Simulation */}
       {analysis.callSimulation && (
-        <Section title="Call Simulation" icon={PhoneCall} accent="text-amber-400">
-          <pre className="text-[13px] text-zinc-300 whitespace-pre-wrap font-sans leading-loose">
-            {analysis.callSimulation}
-          </pre>
-        </Section>
+        <CallSimulationPanel raw={analysis.callSimulation} />
       )}
+    </div>
+  )
+}
+
+function CallSimulationPanel({ raw }: { raw: string }) {
+  const turns = parseCallSimulation(raw)
+
+  return (
+    <div className="rounded-lg border border-white/[0.07] bg-[#111114] overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] text-amber-400">
+        <PhoneCall className="h-3.5 w-3.5" />
+        <span className="text-[12px] font-semibold uppercase tracking-wider">
+          Call Simulation
+        </span>
+        <div className="ml-auto flex items-center gap-3 text-[10px] text-zinc-500 uppercase tracking-wider">
+          <LegendDot color="bg-violet-500" label="You" />
+          <LegendDot color="bg-zinc-500" label="Client" />
+        </div>
+      </div>
+      <div className="px-4 py-5 space-y-3 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.04),transparent_60%)]">
+        {turns.map((turn, i) => (
+          <CallBubble key={i} turn={turn} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn("h-1.5 w-1.5 rounded-full", color)} />
+      <span>{label}</span>
+    </div>
+  )
+}
+
+function CallBubble({ turn }: { turn: CallTurn }) {
+  if (turn.speaker === "narration") {
+    return (
+      <div className="text-center">
+        <span className="inline-block text-[11px] text-zinc-600 italic px-3 py-1 rounded-full bg-white/[0.02] border border-white/[0.04]">
+          {turn.text}
+        </span>
+      </div>
+    )
+  }
+
+  const isMe = turn.speaker === "me"
+
+  return (
+    <div className={cn("flex items-end gap-2", isMe ? "justify-end" : "justify-start")}>
+      {!isMe && (
+        <Avatar
+          icon={User}
+          className="bg-zinc-800 border-white/[0.06] text-zinc-400"
+        />
+      )}
+      <div className={cn("max-w-[78%] flex flex-col gap-1", isMe ? "items-end" : "items-start")}>
+        <span
+          className={cn(
+            "text-[10px] font-semibold uppercase tracking-wider",
+            isMe ? "text-violet-400" : "text-zinc-500",
+          )}
+        >
+          {isMe ? "You" : "Client"}
+        </span>
+        <div
+          className={cn(
+            "text-[13px] leading-relaxed px-3.5 py-2.5 rounded-2xl border whitespace-pre-wrap",
+            isMe
+              ? "bg-violet-500/15 border-violet-500/30 text-zinc-100 rounded-br-sm"
+              : "bg-white/[0.04] border-white/[0.08] text-zinc-200 rounded-bl-sm",
+          )}
+        >
+          {turn.text}
+        </div>
+      </div>
+      {isMe && (
+        <Avatar
+          icon={Briefcase}
+          className="bg-violet-500/20 border-violet-500/30 text-violet-300"
+        />
+      )}
+    </div>
+  )
+}
+
+function Avatar({
+  icon: Icon,
+  className,
+}: {
+  icon: React.ElementType
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "h-7 w-7 shrink-0 rounded-full border flex items-center justify-center",
+        className,
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
     </div>
   )
 }
