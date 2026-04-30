@@ -1,5 +1,14 @@
+import path from 'node:path';
+import { config as loadEnv } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+
+// Load env whether server is started from /server or monorepo root.
+loadEnv();
+loadEnv({
+  path: path.resolve(process.cwd(), 'server/.env'),
+  override: false,
+});
 
 async function listenWithPortFallback(
   app: Awaited<ReturnType<typeof NestFactory.create>>,

@@ -2,6 +2,7 @@ export interface Lead {
   id: string
   businessName: string
   website?: string
+  phone?: string
   category?: string
   city?: string
   status: string
@@ -14,6 +15,7 @@ export interface LeadAnalysis {
   opportunities: string[]
   suggestedOffer: string
   outreachMessage: string
+  callSimulation?: string
   score: number
 }
 

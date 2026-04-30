@@ -13,6 +13,7 @@ import Link from "next/link"
 import {
   ArrowLeft,
   Globe,
+  Phone,
   MapPin,
   Tag,
   Zap,
@@ -159,12 +160,22 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                   <span className="text-zinc-300">{lead.city}</span>
                 </InfoRow>
               )}
+              {lead?.phone && (
+                <InfoRow icon={Phone} label="Phone">
+                  <a
+                    href={`tel:${lead.phone}`}
+                    className="text-violet-400 hover:text-violet-300 transition-colors truncate block"
+                  >
+                    {lead.phone}
+                  </a>
+                </InfoRow>
+              )}
               {lead?.category && (
                 <InfoRow icon={Tag} label="Category">
                   <span className="text-zinc-300">{lead.category}</span>
                 </InfoRow>
               )}
-              {!lead?.website && !lead?.city && !lead?.category && (
+              {!lead?.website && !lead?.city && !lead?.phone && !lead?.category && (
                 <div className="px-4 py-5 text-[12px] text-zinc-600">No info available</div>
               )}
             </div>

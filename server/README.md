@@ -1,98 +1,162 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# FNDRS Lead Engine — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS API server that discovers, stores, and analyzes local business leads in Honduras using **Google Places API (New)**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- NestJS 11 · TypeScript
+- Prisma 7 + SQLite (better-sqlite3)
+- Google Places API (New)
+- OpenAI (optional, not wired yet)
+- Playwright (optional, not wired yet)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Setup
+
+### 1. Install dependencies
 
 ```bash
-$ pnpm install
+pnpm install
 ```
 
-## Compile and run the project
+### 2. Configure environment
+
+Copy and fill in `.env`:
 
 ```bash
-# development
-$ pnpm run start
+DATABASE_URL="file:./dev.db"
+OPENAI_API_KEY=""
+PORT=4000
 
-# watch mode
-$ pnpm run start:dev
+GOOGLE_PLACES_API_KEY=""       # <-- Required for discovery
 
-# production mode
-$ pnpm run start:prod
+DEFAULT_COUNTRY="Honduras"
+DEFAULT_CITIES="San Pedro Sula,Tegucigalpa,La Ceiba,Choloma,Comayagua"
+DEFAULT_CATEGORIES="clínicas privadas,laboratorios médicos,restaurantes,inmobiliarias,empresas de logística,colegios privados,salones de belleza,ferreterías"
 ```
 
-## Run tests
+### 3. How to get a Google Places API key
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create or select a project
+3. Enable **Places API (New)** → APIs & Services → Library → search "Places API (New)"
+4. Go to Credentials → Create Credentials → API Key
+5. (Recommended) Restrict the key to "Places API (New)" only
+6. Paste the key into `GOOGLE_PLACES_API_KEY` in `.env`
+
+> The Places API (New) uses `POST /v1/places:searchText`. Pricing: first $200/month free (~4,000 text searches).
+
+### 4. Run migrations (already applied on first install)
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm prisma:migrate
+# or to apply existing migrations without prompting:
+pnpm exec prisma migrate deploy
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 5. Seed test data (optional)
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+## Run
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# Development (watch mode, port 4000)
+pnpm start:dev
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Production
+pnpm build && pnpm start:prod
+```
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## API Endpoints
 
-## Stay in touch
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Health check |
+| GET | `/leads` | List all leads |
+| POST | `/leads` | Create lead manually |
+| GET | `/leads/:id` | Lead detail + analysis |
+| PATCH | `/leads/:id` | Update lead |
+| POST | `/leads/:id/analyze` | Run analysis on a lead |
+| POST | `/runs/daily` | **Trigger daily discovery** |
+| GET | `/runs` | List all runs |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
-## License
+## Trigger a discovery run
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+curl -X POST http://localhost:4000/runs/daily
+```
+
+Response:
+```json
+{
+  "run": {
+    "id": "clxxx...",
+    "createdAt": "2026-04-30T12:00:00.000Z",
+    "status": "completed",
+    "leadsFound": 23,
+    "leadsProcessed": 18,
+    "errors": 0
+  }
+}
+```
+
+**What happens internally:**
+1. Creates a `DailyRun` record with `status: RUNNING`
+2. Queries Google Places for each `city × category` combination
+3. Normalizes results into `DiscoveredLead` objects
+4. Deduplicates within the batch (by website, phone, businessName+city)
+5. Checks the database for existing leads before saving
+6. Saves new leads with `status: NEW` and an `initialScore` (1–10)
+7. Updates the run with `status: COMPLETED` (or `FAILED` on error)
+
+**Limits:**
+- Max 5 results per query (configurable)
+- Max 50 leads per daily run
+- 200ms delay between API calls
+
+---
+
+## Scoring (1–10)
+
+| Signal | Adjustment |
+|--------|-----------|
+| Base score | 3 |
+| Has website | +2 |
+| No website | −2 |
+| Has phone | +1 |
+| Priority category (clinic, lab, logistics, etc.) | +2 |
+| Rating ≥ 4.0 | +1 |
+| ≥ 20 reviews | +1 |
+| < 5 reviews (likely inactive) | −2 |
+
+Score is clamped between 1 and 10.
+
+---
+
+## Deduplication
+
+A lead is skipped if any of these match an existing DB record:
+- Exact website URL
+- Exact phone number
+- Same businessName + city
+
+---
+
+## Prisma commands
+
+```bash
+pnpm prisma:migrate      # Create and apply migration
+pnpm prisma:generate     # Regenerate Prisma client
+pnpm prisma:studio       # Open Prisma Studio (visual DB browser)
+pnpm seed                # Seed test leads
+```

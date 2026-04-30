@@ -4,7 +4,7 @@ import { useState } from "react"
 import type { LeadAnalysis } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { ScoreBadge } from "@/components/score-badge"
-import { AlertTriangle, Lightbulb, Package, MessageSquare, Copy, Check } from "lucide-react"
+import { AlertTriangle, Lightbulb, Package, MessageSquare, PhoneCall, Copy, Check } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -121,6 +121,15 @@ export function AnalysisPanel({ analysis }: { analysis: LeadAnalysis }) {
           {analysis.outreachMessage}
         </pre>
       </div>
+
+      {/* Call Simulation */}
+      {analysis.callSimulation && (
+        <Section title="Call Simulation" icon={PhoneCall} accent="text-amber-400">
+          <pre className="text-[13px] text-zinc-300 whitespace-pre-wrap font-sans leading-relaxed">
+            {analysis.callSimulation}
+          </pre>
+        </Section>
+      )}
     </div>
   )
 }
