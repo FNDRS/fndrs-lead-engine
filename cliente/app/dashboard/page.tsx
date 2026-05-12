@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { getLeads } from "@/services/api"
+import { getApiBaseUrl, getLeads } from "@/services/api"
 import type { Lead } from "@/lib/types"
 import { LeadTable } from "@/components/lead-table"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -92,7 +92,7 @@ function computeMetrics(leads: Lead[]) {
 }
 
 export default function DashboardPage() {
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["leads"],
     queryFn: getLeads,
   })
@@ -114,10 +114,21 @@ export default function DashboardPage() {
       </div>
 
       {isError && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/[0.07] px-4 py-3">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/[0.07] px-4 py-3 space-y-1">
           <p className="text-[13px] text-red-400">
-            Cannot connect to backend at{" "}
-            <code className="font-mono text-red-300">{process.env.NEXT_PUBLIC_API_URL}</code>
+            Cannot reach the backend API at{" "}
+            <code className="font-mono text-red-300">{getApiBaseUrl()}</code>
+          </p>
+          {error instanceof Error && error.message ? (
+            <p className="text-[12px] text-red-400/80 font-mono">{error.message}</p>
+          ) : null}
+          <p className="text-[12px] text-zinc-500">
+            Run <code className="text-zinc-400">pnpm dev:server</code> from the repo root. In{" "}
+            <code className="text-zinc-400">cliente/.env.local</code>, set{" "}
+            <code className="text-zinc-400">NEST_ORIGIN</code> to the Nest URL (default{" "}
+            <code className="text-zinc-400">http://127.0.0.1:3001</code>). The app calls{" "}
+            <code className="text-zinc-400">/api/backend</code> unless{" "}
+            <code className="text-zinc-400">NEXT_PUBLIC_API_BASE</code> is set.
           </p>
         </div>
       )}

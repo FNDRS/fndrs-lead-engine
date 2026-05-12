@@ -10,6 +10,34 @@ loadEnv({
   override: false,
 });
 
+/** Port from `node main.js --port 3001` / `nest start -- --port 3001` (Nest forwards args after `--`). */
+function parsePortFromArgv(): number | undefined {
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg.startsWith('--port=')) {
+      const n = Number(arg.slice('--port='.length));
+      if (Number.isInteger(n) && n > 0) return n;
+    }
+    if (arg === '--port') {
+      const n = Number(argv[i + 1]);
+      if (Number.isInteger(n) && n > 0) return n;
+    }
+  }
+  return undefined;
+}
+
+function resolveRequestedPort(): number {
+  const fromFlag = parsePortFromArgv();
+  if (fromFlag !== undefined) return fromFlag;
+  const fromEnv = process.env.PORT;
+  if (fromEnv !== undefined && fromEnv !== '') {
+    const n = Number(fromEnv);
+    if (Number.isInteger(n) && n > 0) return n;
+  }
+  return 3001;
+}
+
 async function listenWithPortFallback(
   app: Awaited<ReturnType<typeof NestFactory.create>>,
   startPort: number,
@@ -36,10 +64,15 @@ async function listenWithPortFallback(
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const prod = process.env.NODE_ENV === 'production';
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    // Dev: allow any origin (LAN IP, alternate hosts) when calling Nest directly.
+    // Prod: keep a tight list; same-origin Next proxy is still preferred for the web app.
+    origin: prod
+      ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+      : true,
   });
-  const requestedPort = Number(process.env.PORT ?? 3001);
+  const requestedPort = resolveRequestedPort();
   await listenWithPortFallback(app, requestedPort);
 }
 bootstrap();

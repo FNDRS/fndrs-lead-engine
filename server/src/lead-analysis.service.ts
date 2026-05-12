@@ -3,6 +3,7 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import axios from 'axios';
 import OpenAI from 'openai';
 import { Lead as PrismaLead, Prisma } from '@prisma/client';
 
@@ -180,11 +181,11 @@ export class LeadAnalysisService {
       const normalized = website.startsWith('http')
         ? website
         : `https://${website}`;
-      const res = await fetch(normalized, {
-        signal: AbortSignal.timeout(10_000),
+      const res = await axios.get<string>(normalized, {
+        timeout: 10_000,
+        responseType: 'text',
       });
-      if (!res.ok) return null;
-      const html = await res.text();
+      const html = res.data;
       const text = html
         .replace(/<script[\s\S]*?<\/script>/gi, ' ')
         .replace(/<style[\s\S]*?<\/style>/gi, ' ')

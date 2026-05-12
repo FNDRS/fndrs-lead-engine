@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import axios, { isAxiosError } from 'axios';
 
 export interface DiscoveredLead {
   businessName: string;
@@ -208,23 +209,29 @@ export class LeadDiscoveryService {
       languageCode: 'es',
     };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-FieldMask': fieldMask,
-        'X-Goog-Api-Key': this.apiKey,
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(12_000),
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => response.statusText);
-      throw new Error(`Google Places API ${response.status}: ${text}`);
+    let data: PlacesSearchResponse;
+    try {
+      const response = await axios.post<PlacesSearchResponse>(url, body, {
+        timeout: 12_000,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-FieldMask': fieldMask,
+          'X-Goog-Api-Key': this.apiKey,
+        },
+      });
+      data = response.data;
+    } catch (err) {
+      if (isAxiosError(err) && err.response) {
+        const text =
+          typeof err.response.data === 'string'
+            ? err.response.data
+            : JSON.stringify(err.response.data);
+        throw new Error(
+          `Google Places API ${err.response.status}: ${text || err.response.statusText}`,
+        );
+      }
+      throw err;
     }
-
-    const data = (await response.json()) as PlacesSearchResponse;
     const places = data.places ?? [];
 
     return places
