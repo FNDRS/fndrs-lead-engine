@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useCallback, useMemo } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getLeads, analyzeLead, updateLead } from "@/services/api"
 import type { ContactMethod, Lead } from "@/lib/types"
@@ -13,7 +14,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Search, Zap, CheckCheck, Phone, Mail } from "lucide-react"
@@ -25,16 +25,162 @@ function unique(arr: (string | undefined)[]): string[] {
   return Array.from(new Set(arr.filter(Boolean))) as string[]
 }
 
+function MultiFilterSelect({
+  values,
+  onValuesChange,
+  label,
+  options,
+}: {
+  values: string[]
+  onValuesChange: (v: string[]) => void
+  label: string
+  options: string[]
+}) {
+  const isEmpty = values.length === 0
+  const display = isEmpty
+    ? "All"
+    : values.length === 1
+      ? values[0]
+      : `${values[0]} +${values.length - 1}`
+  return (
+    <Select
+      value={values}
+      multiple
+      onValueChange={(next: unknown) =>
+        onValuesChange(Array.isArray(next) ? (next as string[]) : [])
+      }
+    >
+      <SelectTrigger
+        className={cn(
+          "h-8 w-auto min-w-[160px] bg-white/[0.04] border-white/[0.08] text-[13px] focus:ring-0 focus:border-white/[0.12]",
+          isEmpty ? "text-zinc-400" : "text-zinc-200",
+        )}
+      >
+        <span className="flex items-baseline gap-1 truncate">
+          <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+            {label}
+          </span>
+          <span className="capitalize truncate">{display}</span>
+        </span>
+      </SelectTrigger>
+      <SelectContent className="bg-[#1a1a1f] border-white/[0.08] shadow-xl">
+        {options.length === 0 ? (
+          <div className="px-3 py-2 text-[12px] text-zinc-600">No options</div>
+        ) : (
+          options.map((o) => (
+            <SelectItem
+              key={o}
+              value={o}
+              className="text-zinc-300 text-[13px] capitalize focus:bg-white/[0.06] focus:text-zinc-200"
+            >
+              {o}
+            </SelectItem>
+          ))
+        )}
+      </SelectContent>
+    </Select>
+  )
+}
+
+function FilterSelect({
+  value,
+  onValueChange,
+  label,
+  options,
+  labels,
+}: {
+  value: string
+  onValueChange: (v: string | null) => void
+  label: string
+  options: string[]
+  labels?: Record<string, string>
+}) {
+  const isAll = value === ALL
+  const display = isAll ? "All" : labels?.[value] ?? value
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger
+        className={cn(
+          "h-8 w-auto min-w-[140px] bg-white/[0.04] border-white/[0.08] text-[13px] focus:ring-0 focus:border-white/[0.12]",
+          isAll ? "text-zinc-400" : "text-zinc-200",
+        )}
+      >
+        <span className="flex items-baseline gap-1 truncate">
+          <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+            {label}
+          </span>
+          <span className="capitalize truncate">{display}</span>
+        </span>
+      </SelectTrigger>
+      <SelectContent className="bg-[#1a1a1f] border-white/[0.08] shadow-xl">
+        <SelectItem
+          value={ALL}
+          className="text-zinc-400 text-[13px] focus:bg-white/[0.06] focus:text-zinc-200"
+        >
+          All {label.toLowerCase()}
+        </SelectItem>
+        {options.map((o) => (
+          <SelectItem
+            key={o}
+            value={o}
+            className="text-zinc-300 text-[13px] capitalize focus:bg-white/[0.06] focus:text-zinc-200"
+          >
+            {labels?.[o] ?? o}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 export default function LeadsPage() {
+  return (
+    <Suspense fallback={null}>
+      <LeadsPageInner />
+    </Suspense>
+  )
+}
+
+function LeadsPageInner() {
   const qc = useQueryClient()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const { data, isLoading } = useQuery({ queryKey: ["leads"], queryFn: getLeads })
   const leads = data?.data ?? []
 
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState(ALL)
-  const [cityFilter, setCityFilter] = useState(ALL)
-  const [categoryFilter, setCategoryFilter] = useState(ALL)
-  const [scoreFilter, setScoreFilter] = useState(ALL)
+  const search = searchParams.get("q") ?? ""
+  const statusFilter = searchParams.get("status") ?? ALL
+  const cityFilter = searchParams.get("city") ?? ALL
+  const categoryFilterRaw = searchParams.get("category") ?? ""
+  const categoryFilter = useMemo(
+    () => categoryFilterRaw.split(",").map((s) => s.trim()).filter(Boolean),
+    [categoryFilterRaw],
+  )
+  const scoreFilter = searchParams.get("score") ?? ALL
+
+  const setParam = useCallback(
+    (key: string, value: string | null) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (!value || value === ALL) params.delete(key)
+      else params.set(key, value)
+      const qs = params.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    },
+    [router, pathname, searchParams],
+  )
+
+  const setParamList = useCallback(
+    (key: string, values: string[]) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (values.length === 0) params.delete(key)
+      else params.set(key, values.join(","))
+      const qs = params.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    },
+    [router, pathname, searchParams],
+  )
 
   const statuses = unique(leads.map((l) => l.status))
   const cities = unique(leads.map((l) => l.city))
@@ -45,7 +191,7 @@ export default function LeadsPage() {
       if (search && !l.businessName.toLowerCase().includes(search.toLowerCase())) return false
       if (statusFilter !== ALL && l.status !== statusFilter) return false
       if (cityFilter !== ALL && l.city !== cityFilter) return false
-      if (categoryFilter !== ALL && l.category !== categoryFilter) return false
+      if (categoryFilter.length > 0 && (!l.category || !categoryFilter.includes(l.category))) return false
       if (scoreFilter === "high" && (l.score === undefined || l.score < 80)) return false
       if (scoreFilter === "medium" && (l.score === undefined || l.score < 60 || l.score >= 80)) return false
       if (scoreFilter === "low" && (l.score === undefined || l.score >= 60)) return false
@@ -165,33 +311,33 @@ export default function LeadsPage() {
           <Input
             placeholder="Search..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => setParam("q", e.target.value)}
             className="pl-8 h-8 w-44 bg-white/[0.04] border-white/[0.08] text-zinc-200 placeholder:text-zinc-700 text-[13px] focus-visible:ring-violet-500/30 focus-visible:border-violet-500/50"
           />
         </div>
 
         <FilterSelect
           value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v ?? ALL)}
-          placeholder="Status"
+          onValueChange={(v) => setParam("status", v)}
+          label="Status"
           options={statuses}
         />
         <FilterSelect
           value={cityFilter}
-          onValueChange={(v) => setCityFilter(v ?? ALL)}
-          placeholder="City"
+          onValueChange={(v) => setParam("city", v)}
+          label="City"
           options={cities}
         />
-        <FilterSelect
-          value={categoryFilter}
-          onValueChange={(v) => setCategoryFilter(v ?? ALL)}
-          placeholder="Category"
+        <MultiFilterSelect
+          values={categoryFilter}
+          onValuesChange={(v) => setParamList("category", v)}
+          label="Category"
           options={categories}
         />
         <FilterSelect
           value={scoreFilter}
-          onValueChange={(v) => setScoreFilter(v ?? ALL)}
-          placeholder="Score"
+          onValueChange={(v) => setParam("score", v)}
+          label="Score"
           options={["high", "medium", "low"]}
           labels={{ high: "≥ 80", medium: "60–79", low: "< 60" }}
         />
@@ -199,37 +345,5 @@ export default function LeadsPage() {
 
       <LeadTable leads={filtered} isLoading={isLoading} actions={actions} />
     </div>
-  )
-}
-
-function FilterSelect({
-  value,
-  onValueChange,
-  placeholder,
-  options,
-  labels,
-}: {
-  value: string
-  onValueChange: (v: string | null) => void
-  placeholder: string
-  options: string[]
-  labels?: Record<string, string>
-}) {
-  return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="h-8 w-auto min-w-[120px] bg-white/[0.04] border-white/[0.08] text-zinc-400 text-[13px] focus:ring-0 focus:border-white/[0.12]">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent className="bg-[#1a1a1f] border-white/[0.08] shadow-xl">
-        <SelectItem value={ALL} className="text-zinc-400 text-[13px] focus:bg-white/[0.06] focus:text-zinc-200">
-          All {placeholder}s
-        </SelectItem>
-        {options.map((o) => (
-          <SelectItem key={o} value={o} className="text-zinc-300 text-[13px] capitalize focus:bg-white/[0.06] focus:text-zinc-200">
-            {labels?.[o] ?? o}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   )
 }

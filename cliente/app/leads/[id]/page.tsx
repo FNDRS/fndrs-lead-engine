@@ -82,10 +82,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     return () => clearInterval(interval)
   }, [analyzeMutation.isPending])
 
-  useEffect(() => {
-    setNotesDraft(lead?.followUpNotes ?? "")
-  }, [lead?.followUpNotes])
-
   if (isError) {
     return (
       <div className="p-8">
@@ -94,7 +90,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     )
   }
 
-  const notesDirty = (lead?.followUpNotes ?? "") !== notesDraft
   const toggleMethod = (method: ContactMethod) => {
     const next = lead?.contactMethod === method ? null : method
     methodMutation.mutate(next)
@@ -129,6 +124,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                 {lead?.contactMethod && (
                   <ContactMethodBadge method={lead.contactMethod} />
                 )}
+                {lead?.outcome && <OutcomeBadge outcome={lead.outcome} />}
                 {lead?.score !== undefined && <ScoreBadge score={lead.score} />}
               </div>
             </>
@@ -261,30 +257,17 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
               <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 text-emerald-400">
                 <CheckCheck className="h-3.5 w-3.5" />
                 <span className="text-[12px] font-semibold uppercase tracking-wider">
-                  Follow-up notes
+                  Follow-up
                 </span>
                 <span className="ml-auto text-[11px] text-zinc-600 normal-case tracking-normal">
-                  Promises · responses · emails sent
+                  Track response, promises and outcome
                 </span>
               </div>
-              <div className="p-4 space-y-3">
-                <textarea
-                  value={notesDraft}
-                  onChange={(e) => setNotesDraft(e.target.value)}
-                  placeholder="Ex: emailed proposal · promised callback Friday · waiting on website access..."
-                  className="w-full min-h-[96px] resize-y rounded-md border border-white/[0.08] bg-black/30 px-3 py-2 text-[13px] text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/40"
+              <div className="p-4">
+                <FollowUpEditor
+                  lead={lead}
+                  invalidateKeys={[["leads"], ["lead", id]]}
                 />
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    className="h-7 px-3 text-[11px] bg-violet-600 hover:bg-violet-500 text-white disabled:bg-white/[0.04] disabled:text-zinc-600"
-                    onClick={() => notesMutation.mutate(notesDraft)}
-                    disabled={!notesDirty || notesMutation.isPending}
-                  >
-                    <Save className="h-3 w-3 mr-1" />
-                    {notesMutation.isPending ? "Saving..." : "Save"}
-                  </Button>
-                </div>
               </div>
             </div>
           )}
