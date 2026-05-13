@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getLeads, analyzeLead, updateLead } from "@/services/api"
-import type { Lead } from "@/lib/types"
+import type { ContactMethod, Lead } from "@/lib/types"
 import { LeadTable } from "@/components/lead-table"
 import { CreateLeadDialog } from "@/components/create-lead-dialog"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Search, Zap, CheckCheck } from "lucide-react"
+import { Search, Zap, CheckCheck, Phone, Mail } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 const ALL = "all"
 
@@ -70,8 +71,57 @@ export default function LeadsPage() {
     onError: (err: Error) => toast.error(err.message),
   })
 
+  const methodMutation = useMutation({
+    mutationFn: ({ id, method }: { id: string; method: ContactMethod | null }) =>
+      updateLead(id, { contactMethod: method }),
+    onSuccess: (_data, { method }) => {
+      qc.invalidateQueries({ queryKey: ["leads"] })
+      toast.success(
+        method ? `Queued for ${method}` : "Removed from pendings",
+      )
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  const toggleMethod = (lead: Lead, method: ContactMethod) => {
+    const next = lead.contactMethod === method ? null : method
+    methodMutation.mutate({ id: lead.id, method: next })
+  }
+
   const actions = (lead: Lead) => (
     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button
+        size="sm"
+        variant="ghost"
+        className={cn(
+          "h-6 px-2 text-[11px] hover:bg-amber-500/10",
+          lead.contactMethod === "call"
+            ? "text-amber-400 bg-amber-500/10"
+            : "text-zinc-500 hover:text-amber-400",
+        )}
+        onClick={() => toggleMethod(lead, "call")}
+        disabled={methodMutation.isPending}
+        title={lead.contactMethod === "call" ? "Unqueue call" : "Queue for call"}
+      >
+        <Phone className="h-3 w-3 mr-1" />
+        Call
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className={cn(
+          "h-6 px-2 text-[11px] hover:bg-blue-500/10",
+          lead.contactMethod === "email"
+            ? "text-blue-400 bg-blue-500/10"
+            : "text-zinc-500 hover:text-blue-400",
+        )}
+        onClick={() => toggleMethod(lead, "email")}
+        disabled={methodMutation.isPending}
+        title={lead.contactMethod === "email" ? "Unqueue email" : "Queue for email"}
+      >
+        <Mail className="h-3 w-3 mr-1" />
+        Email
+      </Button>
       <Button
         size="sm"
         variant="ghost"

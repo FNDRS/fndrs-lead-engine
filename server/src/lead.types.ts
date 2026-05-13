@@ -1,5 +1,12 @@
 export type LeadStatus = 'new' | 'analyzed' | 'contacted' | 'rejected';
 export type RunStatus = 'running' | 'completed' | 'failed';
+export type ContactMethod = 'call' | 'email';
+export type FollowUpOutcome =
+  | 'pending'
+  | 'interested'
+  | 'not_interested'
+  | 'won'
+  | 'lost';
 
 export interface Lead {
   id: string;
@@ -10,6 +17,13 @@ export interface Lead {
   city?: string;
   status: LeadStatus;
   score?: number;
+  contactMethod?: ContactMethod | null;
+  promises?: string | null;
+  responseNotes?: string | null;
+  responded?: boolean;
+  respondedAt?: string | null;
+  nextFollowUpAt?: string | null;
+  outcome?: FollowUpOutcome | null;
 }
 
 export interface LeadAnalysis {

@@ -19,22 +19,42 @@ enum RunStatus {
   FAILED
 }
 
+enum ContactMethod {
+  CALL
+  EMAIL
+}
+
+enum FollowUpOutcome {
+  PENDING
+  INTERESTED
+  NOT_INTERESTED
+  WON
+  LOST
+}
+
 model Lead {
-  id           String      @id @default(cuid())
-  businessName String
-  category     String?
-  city         String?
-  country      String?
-  website      String?
-  phone        String?
-  email        String?
-  instagram    String?
-  linkedin     String?
-  source       String?
-  status       LeadStatus  @default(NEW)
-  score        Int         @default(0)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id             String           @id @default(cuid())
+  businessName   String
+  category       String?
+  city           String?
+  country        String?
+  website        String?
+  phone          String?
+  email          String?
+  instagram      String?
+  linkedin       String?
+  source         String?
+  status         LeadStatus       @default(NEW)
+  score          Int              @default(0)
+  contactMethod  ContactMethod?
+  promises       String?
+  responseNotes  String?
+  responded      Boolean          @default(false)
+  respondedAt    DateTime?
+  nextFollowUpAt DateTime?
+  outcome        FollowUpOutcome?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   analysis LeadAnalysis?
 }

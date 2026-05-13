@@ -6,6 +6,9 @@ import { getLead, analyzeLead, updateLead } from "@/services/api"
 import { AnalysisPanel } from "@/components/analysis-panel"
 import { StatusBadge } from "@/components/status-badge"
 import { ScoreBadge } from "@/components/score-badge"
+import { ContactMethodBadge } from "@/components/contact-method-badge"
+import { OutcomeBadge } from "@/components/outcome-badge"
+import { FollowUpEditor } from "@/components/follow-up-editor"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
@@ -14,12 +17,15 @@ import {
   ArrowLeft,
   Globe,
   Phone,
+  Mail,
   MapPin,
   Tag,
   Zap,
   CheckCheck,
   RefreshCw,
 } from "lucide-react"
+import type { ContactMethod } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -51,13 +57,16 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     onError: (err: Error) => toast.error(err.message),
   })
 
-  if (isError) {
-    return (
-      <div className="p-8">
-        <p className="text-[13px] text-red-400">Failed to load lead.</p>
-      </div>
-    )
-  }
+  const methodMutation = useMutation({
+    mutationFn: (method: ContactMethod | null) =>
+      updateLead(id, { contactMethod: method }),
+    onSuccess: (_data, method) => {
+      qc.invalidateQueries({ queryKey: ["lead", id] })
+      qc.invalidateQueries({ queryKey: ["leads"] })
+      toast.success(method ? `Queued for ${method}` : "Removed from pendings")
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
 
   const lead = data?.lead
   const analysis = data?.analysis
@@ -72,6 +81,24 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     }, 1000)
     return () => clearInterval(interval)
   }, [analyzeMutation.isPending])
+
+  useEffect(() => {
+    setNotesDraft(lead?.followUpNotes ?? "")
+  }, [lead?.followUpNotes])
+
+  if (isError) {
+    return (
+      <div className="p-8">
+        <p className="text-[13px] text-red-400">Failed to load lead.</p>
+      </div>
+    )
+  }
+
+  const notesDirty = (lead?.followUpNotes ?? "") !== notesDraft
+  const toggleMethod = (method: ContactMethod) => {
+    const next = lead?.contactMethod === method ? null : method
+    methodMutation.mutate(next)
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8">
@@ -97,15 +124,48 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
               <h1 className="text-[24px] font-semibold text-zinc-100 tracking-tight leading-none">
                 {lead?.businessName}
               </h1>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {lead && <StatusBadge status={lead.status} />}
+                {lead?.contactMethod && (
+                  <ContactMethodBadge method={lead.contactMethod} />
+                )}
                 {lead?.score !== undefined && <ScoreBadge score={lead.score} />}
               </div>
             </>
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn(
+              "h-8 gap-1.5 px-3 text-[13px] border",
+              lead?.contactMethod === "call"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/15"
+                : "border-white/[0.08] text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 hover:border-amber-500/30",
+            )}
+            onClick={() => toggleMethod("call")}
+            disabled={methodMutation.isPending}
+          >
+            <Phone className="h-3.5 w-3.5" />
+            {lead?.contactMethod === "call" ? "Queued for Call" : "Queue Call"}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn(
+              "h-8 gap-1.5 px-3 text-[13px] border",
+              lead?.contactMethod === "email"
+                ? "border-blue-500/40 bg-blue-500/10 text-blue-300 hover:bg-blue-500/15"
+                : "border-white/[0.08] text-zinc-400 hover:text-blue-300 hover:bg-blue-500/10 hover:border-blue-500/30",
+            )}
+            onClick={() => toggleMethod("email")}
+            disabled={methodMutation.isPending}
+          >
+            <Mail className="h-3.5 w-3.5" />
+            {lead?.contactMethod === "email" ? "Queued for Email" : "Queue Email"}
+          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -196,6 +256,39 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* Analysis */}
         <div className="space-y-3">
+          {lead?.status === "contacted" && (
+            <div className="rounded-lg border border-white/[0.07] bg-[#111114] overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 text-emerald-400">
+                <CheckCheck className="h-3.5 w-3.5" />
+                <span className="text-[12px] font-semibold uppercase tracking-wider">
+                  Follow-up notes
+                </span>
+                <span className="ml-auto text-[11px] text-zinc-600 normal-case tracking-normal">
+                  Promises · responses · emails sent
+                </span>
+              </div>
+              <div className="p-4 space-y-3">
+                <textarea
+                  value={notesDraft}
+                  onChange={(e) => setNotesDraft(e.target.value)}
+                  placeholder="Ex: emailed proposal · promised callback Friday · waiting on website access..."
+                  className="w-full min-h-[96px] resize-y rounded-md border border-white/[0.08] bg-black/30 px-3 py-2 text-[13px] text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/40"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    className="h-7 px-3 text-[11px] bg-violet-600 hover:bg-violet-500 text-white disabled:bg-white/[0.04] disabled:text-zinc-600"
+                    onClick={() => notesMutation.mutate(notesDraft)}
+                    disabled={!notesDirty || notesMutation.isPending}
+                  >
+                    <Save className="h-3 w-3 mr-1" />
+                    {notesMutation.isPending ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <p className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider mb-3">
             Analysis
           </p>

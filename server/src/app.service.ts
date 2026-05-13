@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import {
+  ContactMethod as PrismaContactMethod,
+  FollowUpOutcome as PrismaFollowUpOutcome,
   Lead as PrismaLead,
   LeadAnalysis as PrismaLeadAnalysis,
   LeadStatus as PrismaLeadStatus,
@@ -17,8 +19,10 @@ import {
 import { LeadAnalysisService } from './lead-analysis.service';
 import { DiscoveredLead, LeadDiscoveryService } from './lead-discovery.service';
 import type {
+  ContactMethod,
   CreateLeadInput,
   DailyRun,
+  FollowUpOutcome,
   Lead,
   LeadAnalysis,
   LeadStatus,
@@ -97,6 +101,34 @@ export class AppService implements OnModuleDestroy {
         city: data.city,
         score: data.score,
         status: data.status ? this.toPrismaLeadStatus(data.status) : undefined,
+        contactMethod:
+          data.contactMethod === undefined
+            ? undefined
+            : data.contactMethod === null
+              ? null
+              : this.toPrismaContactMethod(data.contactMethod),
+        promises: data.promises === undefined ? undefined : data.promises,
+        responseNotes:
+          data.responseNotes === undefined ? undefined : data.responseNotes,
+        responded: data.responded === undefined ? undefined : data.responded,
+        respondedAt:
+          data.respondedAt === undefined
+            ? undefined
+            : data.respondedAt === null
+              ? null
+              : new Date(data.respondedAt),
+        nextFollowUpAt:
+          data.nextFollowUpAt === undefined
+            ? undefined
+            : data.nextFollowUpAt === null
+              ? null
+              : new Date(data.nextFollowUpAt),
+        outcome:
+          data.outcome === undefined
+            ? undefined
+            : data.outcome === null
+              ? null
+              : this.toPrismaFollowUpOutcome(data.outcome),
       },
     });
     return this.mapLead(lead);
@@ -331,6 +363,19 @@ export class AppService implements OnModuleDestroy {
       city: lead.city ?? undefined,
       status: lead.status.toLowerCase() as LeadStatus,
       score: lead.score,
+      contactMethod: lead.contactMethod
+        ? (lead.contactMethod.toLowerCase() as ContactMethod)
+        : null,
+      promises: lead.promises ?? null,
+      responseNotes: lead.responseNotes ?? null,
+      responded: lead.responded,
+      respondedAt: lead.respondedAt ? lead.respondedAt.toISOString() : null,
+      nextFollowUpAt: lead.nextFollowUpAt
+        ? lead.nextFollowUpAt.toISOString()
+        : null,
+      outcome: lead.outcome
+        ? (lead.outcome.toLowerCase() as FollowUpOutcome)
+        : null,
     };
   }
 
@@ -385,6 +430,29 @@ export class AppService implements OnModuleDestroy {
         return PrismaLeadStatus.REJECTED;
       default:
         return PrismaLeadStatus.NEW;
+    }
+  }
+
+  private toPrismaContactMethod(method: ContactMethod): PrismaContactMethod {
+    return method === 'call'
+      ? PrismaContactMethod.CALL
+      : PrismaContactMethod.EMAIL;
+  }
+
+  private toPrismaFollowUpOutcome(
+    outcome: FollowUpOutcome,
+  ): PrismaFollowUpOutcome {
+    switch (outcome) {
+      case 'pending':
+        return PrismaFollowUpOutcome.PENDING;
+      case 'interested':
+        return PrismaFollowUpOutcome.INTERESTED;
+      case 'not_interested':
+        return PrismaFollowUpOutcome.NOT_INTERESTED;
+      case 'won':
+        return PrismaFollowUpOutcome.WON;
+      case 'lost':
+        return PrismaFollowUpOutcome.LOST;
     }
   }
 }

@@ -1,3 +1,12 @@
+export type ContactMethod = "call" | "email"
+
+export type FollowUpOutcome =
+  | "pending"
+  | "interested"
+  | "not_interested"
+  | "won"
+  | "lost"
+
 export interface Lead {
   id: string
   businessName: string
@@ -7,6 +16,13 @@ export interface Lead {
   city?: string
   status: string
   score?: number
+  contactMethod?: ContactMethod | null
+  promises?: string | null
+  responseNotes?: string | null
+  responded?: boolean
+  respondedAt?: string | null
+  nextFollowUpAt?: string | null
+  outcome?: FollowUpOutcome | null
 }
 
 export interface LeadAnalysis {

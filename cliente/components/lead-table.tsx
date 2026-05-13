@@ -13,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScoreBadge } from "@/components/score-badge"
 import { StatusBadge } from "@/components/status-badge"
+import { ContactMethodBadge } from "@/components/contact-method-badge"
 import { Globe } from "lucide-react"
 
 interface LeadTableProps {
@@ -97,7 +98,10 @@ export function LeadTable({ leads, isLoading, actions }: LeadTableProps) {
                   {lead.city ?? <span className="text-zinc-700">—</span>}
                 </TableCell>
                 <TableCell className="py-3">
-                  <StatusBadge status={lead.status} />
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <StatusBadge status={lead.status} />
+                    <ContactMethodBadge method={lead.contactMethod} />
+                  </div>
                 </TableCell>
                 <TableCell className="py-3">
                   <ScoreBadge score={lead.score} />
