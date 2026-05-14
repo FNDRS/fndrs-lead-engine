@@ -1,16 +1,25 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getLeads, updateLead } from "@/services/api"
 import type { Lead } from "@/lib/types"
 import { LeadTable } from "@/components/lead-table"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuPopup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { DoNotContactDialog } from "@/components/do-not-contact-dialog"
 import { toast } from "sonner"
-import { CheckCheck, X } from "lucide-react"
+import { CheckCheck, X, MoreHorizontal, Ban } from "lucide-react"
 
 export default function PendingsPage() {
   const qc = useQueryClient()
+  const [dncLead, setDncLead] = useState<Lead | null>(null)
   const { data, isLoading } = useQuery({
     queryKey: ["leads"],
     queryFn: getLeads,
@@ -48,27 +57,27 @@ export default function PendingsPage() {
   })
 
   const actions = (lead: Lead) => (
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-6 px-2 text-[11px] text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10"
-        onClick={() => contactMutation.mutate(lead.id)}
-        disabled={contactMutation.isPending}
-      >
-        <CheckCheck className="h-3 w-3 mr-1" />
-        Mark Contacted
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-6 px-2 text-[11px] text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-        onClick={() => removeMutation.mutate(lead.id)}
-        disabled={removeMutation.isPending}
-      >
-        <X className="h-3 w-3 mr-1" />
-        Unqueue
-      </Button>
+    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+          <MoreHorizontal className="h-3.5 w-3.5 text-zinc-500" />
+        </DropdownMenuTrigger>
+        <DropdownMenuPopup align="end">
+          <DropdownMenuItem onClick={() => contactMutation.mutate(lead.id)}>
+            <CheckCheck className="h-3.5 w-3.5 text-emerald-400" />
+            Mark Contacted
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => removeMutation.mutate(lead.id)}>
+            <X className="h-3.5 w-3.5 text-red-400" />
+            Unqueue
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setDncLead(lead)}>
+            <Ban className="h-3.5 w-3.5 text-red-400" />
+            Do Not Contact
+          </DropdownMenuItem>
+        </DropdownMenuPopup>
+      </DropdownMenu>
     </div>
   )
 
@@ -107,6 +116,15 @@ export default function PendingsPage() {
         </div>
         <LeadTable leads={emails} isLoading={isLoading} actions={actions} />
       </section>
+
+      {dncLead && (
+        <DoNotContactDialog
+          leadId={dncLead.id}
+          leadName={dncLead.businessName}
+          open={!!dncLead}
+          onOpenChange={(open) => { if (!open) setDncLead(null) }}
+        />
+      )}
     </div>
   )
 }

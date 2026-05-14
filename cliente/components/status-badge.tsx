@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils"
 
 const STATUS: Record<string, string> = {
-  new:          "bg-sky-500/10 text-sky-400 ring-sky-500/20",
-  contacted:    "bg-violet-500/10 text-violet-400 ring-violet-500/20",
-  analyzed:     "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20",
-  qualified:    "bg-amber-500/10 text-amber-400 ring-amber-500/20",
-  disqualified: "bg-zinc-500/10 text-zinc-500 ring-zinc-500/20",
+  new:             "bg-sky-500/10 text-sky-400 ring-sky-500/20",
+  contacted:       "bg-violet-500/10 text-violet-400 ring-violet-500/20",
+  analyzed:        "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20",
+  qualified:       "bg-amber-500/10 text-amber-400 ring-amber-500/20",
+  disqualified:    "bg-zinc-500/10 text-zinc-500 ring-zinc-500/20",
+  do_not_contact:  "bg-red-500/10 text-red-400 ring-red-500/20",
 }
 
 export function StatusBadge({ status }: { status: string }) {

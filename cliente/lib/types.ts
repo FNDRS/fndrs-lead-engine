@@ -17,6 +17,7 @@ export interface Lead {
   status: string
   score?: number
   contactMethod?: ContactMethod | null
+  doNotContactReason?: string | null
   promises?: string | null
   responseNotes?: string | null
   responded?: boolean

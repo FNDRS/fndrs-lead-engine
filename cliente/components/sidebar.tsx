@@ -9,6 +9,7 @@ import {
   Play,
   Clock,
   MessageCircle,
+  Ban,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -34,6 +35,7 @@ const sections: NavSection[] = [
       { href: "/leads", label: "Leads", icon: Users },
       { href: "/pendings", label: "Pendings", icon: Clock },
       { href: "/follow-ups", label: "Follow Ups", icon: MessageCircle },
+      { href: "/do-not-contact", label: "Do Not Contact", icon: Ban },
     ],
   },
   {

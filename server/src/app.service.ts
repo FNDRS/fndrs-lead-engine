@@ -107,6 +107,10 @@ export class AppService implements OnModuleDestroy {
             : data.contactMethod === null
               ? null
               : this.toPrismaContactMethod(data.contactMethod),
+        doNotContactReason:
+          data.doNotContactReason === undefined
+            ? undefined
+            : data.doNotContactReason,
         promises: data.promises === undefined ? undefined : data.promises,
         responseNotes:
           data.responseNotes === undefined ? undefined : data.responseNotes,
@@ -366,6 +370,7 @@ export class AppService implements OnModuleDestroy {
       contactMethod: lead.contactMethod
         ? (lead.contactMethod.toLowerCase() as ContactMethod)
         : null,
+      doNotContactReason: lead.doNotContactReason ?? null,
       promises: lead.promises ?? null,
       responseNotes: lead.responseNotes ?? null,
       responded: lead.responded,
@@ -428,6 +433,8 @@ export class AppService implements OnModuleDestroy {
         return PrismaLeadStatus.CONTACTED;
       case 'rejected':
         return PrismaLeadStatus.REJECTED;
+      case 'do_not_contact':
+        return PrismaLeadStatus.DO_NOT_CONTACT;
       default:
         return PrismaLeadStatus.NEW;
     }

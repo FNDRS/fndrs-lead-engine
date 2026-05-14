@@ -8,27 +8,6 @@ const path = require('node:path');
 
 const serverRoot = path.join(__dirname, '..');
 
-function loadsForCurrentNode() {
-  try {
-    require.resolve('better-sqlite3/package.json', { paths: [serverRoot] });
-    require('better-sqlite3');
-    return true;
-  } catch (e) {
-    const msg = String(e?.message ?? e);
-    if (e?.code === 'MODULE_NOT_FOUND') {
-      return false;
-    }
-    if (
-      e?.code === 'ERR_DLOPEN_FAILED' ||
-      msg.includes('NODE_MODULE_VERSION') ||
-      msg.includes('was compiled against a different Node.js version')
-    ) {
-      return false;
-    }
-    throw e;
-  }
-}
-
 function main() {
   let pkgDir;
   try {
@@ -45,11 +24,6 @@ function main() {
 
   if (!fs.existsSync(path.join(pkgDir, 'binding.gyp'))) {
     console.warn('[postinstall] better-sqlite3 has no binding.gyp; skip.');
-    return;
-  }
-
-  if (loadsForCurrentNode()) {
-    console.log('[postinstall] better-sqlite3 matches this Node; skip rebuild.');
     return;
   }
 

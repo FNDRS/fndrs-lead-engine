@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getLead, analyzeLead, updateLead } from "@/services/api"
 import { AnalysisPanel } from "@/components/analysis-panel"
+import { DoNotContactDialog } from "@/components/do-not-contact-dialog"
 import { StatusBadge } from "@/components/status-badge"
 import { ScoreBadge } from "@/components/score-badge"
 import { ContactMethodBadge } from "@/components/contact-method-badge"
@@ -23,6 +24,7 @@ import {
   Zap,
   CheckCheck,
   RefreshCw,
+  Ban,
 } from "lucide-react"
 import type { ContactMethod } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -31,6 +33,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params)
   const qc = useQueryClient()
   const [thinkingSeconds, setThinkingSeconds] = useState(0)
+
+  const [dncOpen, setDncOpen] = useState(false)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["lead", id],
@@ -96,6 +100,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
+    <>
     <div className="p-8 max-w-5xl mx-auto space-y-8">
       {/* Back */}
       <Link
@@ -171,6 +176,15 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           >
             <CheckCheck className="h-3.5 w-3.5" />
             Mark Contacted
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 gap-1.5 px-3 text-[13px] border border-white/[0.08] text-zinc-400 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30"
+            onClick={() => setDncOpen(true)}
+          >
+            <Ban className="h-3.5 w-3.5" />
+            Do Not Contact
           </Button>
           <Button
             size="sm"
@@ -313,6 +327,16 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
     </div>
+
+      {lead && (
+        <DoNotContactDialog
+          leadId={lead.id}
+          leadName={lead.businessName}
+          open={dncOpen}
+          onOpenChange={setDncOpen}
+        />
+      )}
+    </>
   )
 }
 

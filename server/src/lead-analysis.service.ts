@@ -22,11 +22,17 @@ interface GeneratedLeadAnalysis {
 @Injectable()
 export class LeadAnalysisService {
   async generate(lead: PrismaLead): Promise<GeneratedLeadAnalysis> {
-    const websiteContext = await this.fetchWebsiteContext(lead.website);
-    const ai = await this.generateLeadAnalysisWithAI(lead, websiteContext);
+    const [websiteContext, searchContext] = await Promise.all([
+      this.fetchWebsiteContext(lead.website),
+      this.searchBusinessContext(lead.businessName, lead.city, lead.category),
+    ]);
+    const combinedContext = [websiteContext, searchContext]
+      .filter(Boolean)
+      .join('\n\n---\n\n');
+    const ai = await this.generateLeadAnalysisWithAI(lead, combinedContext || null);
     return {
       ...ai,
-      websiteContextUsed: Boolean(websiteContext),
+      websiteContextUsed: Boolean(combinedContext),
     };
   }
 
@@ -98,28 +104,28 @@ export class LeadAnalysisService {
       `country: ${lead.country ?? 'N/A'}`,
       '',
       'METODOLOGIA OBLIGATORIA:',
-      '1. INFIERE el sector, modelo operativo y procesos tipicos de este negocio segun su categoria y region. Nombra procesos concretos (ej: "agendamiento de citas", "facturacion electronica DGI", "control de inventario por sucursal", "cotizacion manual via WhatsApp", "expedientes en papel").',
-      '2. Hipotetiza dolores TECNICOS especificos de ese sector y tamano (no genericos). Ejemplo malo: "procesos manuales". Ejemplo bueno: "agendamiento de citas en Excel/WhatsApp sin recordatorios automaticos provoca no-shows del 20-30%".',
-      '3. Para cada problema, mapea una solucion CONCRETA de nuestras 7 categorias.',
-      '4. NO preguntes al cliente cuales son sus problemas: ya los planteas tu y propones la solucion.',
+      '1. Usa el contexto web y resultados de busqueda abajo para IDENTIFICAR datos concretos del negocio: su propuesta de valor, servicios, tipo de clientes, tecnologia que usan, tamano, ubicaciones, etc.',
+      '2. INFIERE el sector, modelo operativo y procesos tipicos. Nombra procesos concretos (ej: "agendamiento de citas", "facturacion electronica DGI", "control de inventario por sucursal", "cotizacion manual via WhatsApp", "expedientes en papel").',
+      '3. Hipotetiza dolores TECNICOS especificos de ESE negocio basados en lo que viste en su web/busqueda. NO uses los mismos problemas para todos los negocios de una categoria.',
+      '4. Para cada problema, mapea una solucion CONCRETA de nuestras 7 categorias.',
+      '5. NO preguntes al cliente cuales son sus problemas: ya los planteas tu y propones la solucion.',
       '',
       'REGLAS DEL CONTENIDO:',
-      '- problems: minimo 4. Cada uno es un dolor tecnico/operativo especifico, redactado como hipotesis fundamentada (ej: "Probablemente gestionan agendamiento manual via telefono/WhatsApp sin sistema central, lo que genera doble booking y perdida de seguimiento").',
-      '- opportunities: minimo 4. Cada una mapea a una solucion concreta nuestra, con beneficio cuantificado cuando sea posible (ej: "Sistema de agendamiento online con confirmaciones automaticas: reduce no-shows ~25% y libera 10h/semana del personal").',
-      '- suggestedOffer: minimo 3 frases. Describe una propuesta tecnica especifica con stack/componentes/entregables y un caso de uso clave. Ej: "Implementar plataforma de agendamiento integrada con su sistema actual, con confirmacion via WhatsApp/SMS, recordatorios automaticos, calendario para staff y panel de gestion. Stack: Next.js + Postgres, integracion WhatsApp Cloud API. Entrega en 4-6 semanas con piloto en 2 sucursales."',
-      '- outreachMessage en espanol, tono consultivo tecnico. PRIMERA persona, tu ya identificaste un dolor y propones la solucion. NO pidas reunion abierta tipo "que necesitan?", proponer agenda concreta.',
-      '- callSimulation en espanol, dialogo entre "Yo" y "Cliente" (USA EXACTAMENTE esos prefijos: "Yo:" y "Cliente:"). Minimo 8 lineas. Comienza TU presentando hipotesis especificas y propuesta concreta (no preguntes "como gestionan sus procesos?" - eso es debil). El cliente responde con dudas tipicas/objeciones reales. Cierra con propuesta de siguiente paso medible (ej: "agendar diagnostico tecnico de 30min con tu equipo de operaciones el martes a las 10am").',
-      '- score: 1-100, basado en encaje real con nuestras soluciones (alta digitalizacion necesaria, sector con procesos repetitivos, evidencia de website/contacto, tamano probable).',
+      '- problems: minimo 4. CADA UNO debe mencionar algo especifico del negocio basado en el contexto disponible. Si hay contexto web, menciona lo que viste en el sitio. Ej: "Su sitio muestra 20+ sucursales pero no tiene sistema centralizado de inventario" (menciona el numero real de sucursales si lo viste).',
+      '- opportunities: minimo 4. Cada una mapea a una solucion concreta nuestra, con beneficio cuantificado. Si viste el tamano del negocio en el contexto, usa datos reales. Ej: "Con 20 sucursales, un sistema centralizado de inventario reduce roturas de stock ~30% y libera 2h/dia por sucursal en conciliacion manual = 40h/semana recuperadas".',
+      '- suggestedOffer: minimo 3 frases. Describe una propuesta tecnica especifica con stack/componentes/entregables. MENCIONA algo unico del negocio que viste en el contexto. Ej: "Implementar plataforma de agendamiento integrada con su sistema actual (vi que usan WordPress + WooCommerce), con confirmacion via WhatsApp/SMS, recordatorios automaticos, calendario para staff y panel de gestion."',
+      '- outreachMessage en espanol, tono consultivo tecnico. PRIMERA persona. MENCIONA algo que viste en su web o busqueda para demostrar que investigaste. Ej: "Visite su sitio y veo que ofrecen [servicio X] en [ciudad], pero note que [problema especifico]."',
+      '- callSimulation en espanol, dialogo entre "Yo" y "Cliente" (USA EXACTAMENTE esos prefijos: "Yo:" y "Cliente:"). Minimo 8 lineas. USA datos del contexto web para personalizar. Ej: "Yo: Vi en su sitio que tienen 15 sucursales. Sin un sistema centralizado, conciliar el inventario de cada una debe ser un dolor de cabeza."',
+      '- score: 1-100, basado en encaje real con nuestras soluciones.',
       '',
       'PROHIBIDO:',
       '- Marketing digital, anuncios, SEO, redes sociales, community management, branding, media, ads.',
-      '- Frases genericas ("optimizar procesos", "mejorar eficiencia", "transformacion digital" sin especificar).',
+      '- Frases genericas sin evidencia del contexto disponible.',
+      '- Repetir los mismos problemas/oportunidades para diferentes leads.',
       '- Preguntas vagas en callSimulation tipo "como gestionan sus procesos actualmente?" - tu YA propones.',
       '',
-      'Si hay contexto web, usalo para anclar problemas/oportunidades en evidencia real del sitio.',
-      '',
-      'Contexto web extraido (puede venir vacio):',
-      websiteContext ?? 'Sin contexto web disponible.',
+      'Contexto extraido del sitio web y busquedas (puede venir vacio — en ese caso, infiere basado en categoria y region):',
+      websiteContext ?? 'No hay contexto disponible. Infiere basado en categoria, ciudad y pais.',
     ].join('\n');
 
     let content = '';
@@ -177,23 +183,108 @@ export class LeadAnalysisService {
 
   private async fetchWebsiteContext(website?: string | null): Promise<string | null> {
     if (!website) return null;
+    const urls = [
+      website.startsWith('http') ? website : `https://${website}`,
+      website.startsWith('http') ? website : `http://${website}`,
+    ];
+    for (const url of [...new Set(urls)]) {
+      try {
+        const res = await axios.get<string>(url, {
+          timeout: 8_000,
+          responseType: 'text',
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            Accept:
+              'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'es-HN,es;q=0.9,en;q=0.8',
+          },
+        });
+        const html = res.data;
+        const text = html
+          .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+          .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+          .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, ' ')
+          .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, ' ')
+          .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        const meaningful = text
+          .split(/(?<=[.!?])\s+/)
+          .filter((s) => s.length > 30)
+          .join(' ');
+        if (meaningful.length > 100) return meaningful.slice(0, 5000);
+      } catch {}
+    }
+    return null;
+  }
+
+  private async searchBusinessContext(
+    businessName: string,
+    city?: string | null,
+    category?: string | null,
+  ): Promise<string | null> {
+    const query = encodeURIComponent(
+      [businessName, city, category].filter(Boolean).join(' '),
+    );
     try {
-      const normalized = website.startsWith('http')
-        ? website
-        : `https://${website}`;
-      const res = await axios.get<string>(normalized, {
-        timeout: 10_000,
-        responseType: 'text',
-      });
+      const res = await axios.get<string>(
+        `https://www.google.com/search?q=${query}&hl=es`,
+        {
+          timeout: 8_000,
+          responseType: 'text',
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            Accept:
+              'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'es-HN,es;q=0.9,en;q=0.8',
+          },
+        },
+      );
       const html = res.data;
-      const text = html
-        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      if (!text) return null;
-      return text.slice(0, 5000);
+      const snippets: string[] = [];
+      const patterns = [
+        /<span[^>]*class="[^"]*VuuXrf[^"]*"[^>]*>([^<]+)<\/span>/gi,
+        /<div[^>]*class="[^"]*BNeawe[^"]*"[^>]*>([^<]+)<\/div>/gi,
+        /<span[^>]*class="[^"]*aCOpRe[^"]*"[^>]*>([^<]+)<\/span>/gi,
+        /<div[^>]*class="[^"]*lEBKkf[^"]*"[^>]*>([^<]+)<\/div>/gi,
+      ];
+      for (const pattern of patterns) {
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(html)) !== null) {
+          const text = match[1]?.trim();
+          if (text && text.length > 20) snippets.push(text);
+        }
+      }
+      if (snippets.length === 0) {
+        const text = html
+          .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+          .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        const sentences = text
+          .split(/(?<=[.!?])\s+/)
+          .filter(
+            (s) =>
+              s.length > 40 &&
+              !s.includes('cookie') &&
+              !s.includes('Cookie') &&
+              !s.includes('Iniciar sesión') &&
+              !s.includes('google') &&
+              !s.includes('Google'),
+          );
+        snippets.push(...sentences.slice(0, 5));
+      }
+      if (snippets.length > 0) {
+        return [
+          `Resultados de búsqueda para "${[businessName, city].filter(Boolean).join(', ')}":`,
+          ...snippets.slice(0, 6),
+        ].join('\n');
+      }
+      return null;
     } catch {
       return null;
     }

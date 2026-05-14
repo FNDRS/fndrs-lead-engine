@@ -126,7 +126,7 @@ export default function DashboardPage() {
             Run <code className="text-zinc-400">pnpm dev:server</code> from the repo root. In{" "}
             <code className="text-zinc-400">cliente/.env.local</code>, set{" "}
             <code className="text-zinc-400">NEST_ORIGIN</code> to the Nest URL (default{" "}
-            <code className="text-zinc-400">http://127.0.0.1:3001</code>). The app calls{" "}
+             <code className="text-zinc-400">http://127.0.0.1:4001</code>). The app calls{" "}
             <code className="text-zinc-400">/api/backend</code> unless{" "}
             <code className="text-zinc-400">NEXT_PUBLIC_API_BASE</code> is set.
           </p>

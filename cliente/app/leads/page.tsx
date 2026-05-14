@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useCallback, useMemo } from "react"
+import { Suspense, useCallback, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getLeads, analyzeLead, updateLead } from "@/services/api"
@@ -15,8 +15,16 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuPopup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { DoNotContactDialog } from "@/components/do-not-contact-dialog"
 import { toast } from "sonner"
-import { Search, Zap, CheckCheck, Phone, Mail } from "lucide-react"
+import { Search, Zap, CheckCheck, Phone, Mail, MoreHorizontal, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const ALL = "all"
@@ -146,6 +154,7 @@ function LeadsPageInner() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [dncLead, setDncLead] = useState<Lead | null>(null)
 
   const { data, isLoading } = useQuery({ queryKey: ["leads"], queryFn: getLeads })
   const leads = data?.data ?? []
@@ -188,6 +197,7 @@ function LeadsPageInner() {
 
   const filtered = useMemo(() => {
     return leads.filter((l) => {
+      if (l.status === "contacted" || l.status === "do_not_contact" || l.status === "rejected") return false
       if (search && !l.businessName.toLowerCase().includes(search.toLowerCase())) return false
       if (statusFilter !== ALL && l.status !== statusFilter) return false
       if (cityFilter !== ALL && l.city !== cityFilter) return false
@@ -235,59 +245,36 @@ function LeadsPageInner() {
   }
 
   const actions = (lead: Lead) => (
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-      <Button
-        size="sm"
-        variant="ghost"
-        className={cn(
-          "h-6 px-2 text-[11px] hover:bg-amber-500/10",
-          lead.contactMethod === "call"
-            ? "text-amber-400 bg-amber-500/10"
-            : "text-zinc-500 hover:text-amber-400",
-        )}
-        onClick={() => toggleMethod(lead, "call")}
-        disabled={methodMutation.isPending}
-        title={lead.contactMethod === "call" ? "Unqueue call" : "Queue for call"}
-      >
-        <Phone className="h-3 w-3 mr-1" />
-        Call
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        className={cn(
-          "h-6 px-2 text-[11px] hover:bg-blue-500/10",
-          lead.contactMethod === "email"
-            ? "text-blue-400 bg-blue-500/10"
-            : "text-zinc-500 hover:text-blue-400",
-        )}
-        onClick={() => toggleMethod(lead, "email")}
-        disabled={methodMutation.isPending}
-        title={lead.contactMethod === "email" ? "Unqueue email" : "Queue for email"}
-      >
-        <Mail className="h-3 w-3 mr-1" />
-        Email
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-6 px-2 text-[11px] text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10"
-        onClick={() => analyzeMutation.mutate(lead.id)}
-        disabled={analyzeMutation.isPending}
-      >
-        <Zap className="h-3 w-3 mr-1" />
-        Analyze
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-6 px-2 text-[11px] text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10"
-        onClick={() => contactMutation.mutate(lead.id)}
-        disabled={contactMutation.isPending}
-      >
-        <CheckCheck className="h-3 w-3 mr-1" />
-        Contacted
-      </Button>
+    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+          <MoreHorizontal className="h-3.5 w-3.5 text-zinc-500" />
+        </DropdownMenuTrigger>
+        <DropdownMenuPopup align="end">
+          <DropdownMenuItem onClick={() => toggleMethod(lead, "call")}>
+            <Phone className="h-3.5 w-3.5 text-amber-400" />
+            {lead.contactMethod === "call" ? "Unqueue Call" : "Queue Call"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => toggleMethod(lead, "email")}>
+            <Mail className="h-3.5 w-3.5 text-blue-400" />
+            {lead.contactMethod === "email" ? "Unqueue Email" : "Queue Email"}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => analyzeMutation.mutate(lead.id)}>
+            <Zap className="h-3.5 w-3.5 text-violet-400" />
+            Analyze
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => contactMutation.mutate(lead.id)}>
+            <CheckCheck className="h-3.5 w-3.5 text-emerald-400" />
+            Mark Contacted
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setDncLead(lead)}>
+            <Ban className="h-3.5 w-3.5 text-red-400" />
+            Do Not Contact
+          </DropdownMenuItem>
+        </DropdownMenuPopup>
+      </DropdownMenu>
     </div>
   )
 
@@ -344,6 +331,15 @@ function LeadsPageInner() {
       </div>
 
       <LeadTable leads={filtered} isLoading={isLoading} actions={actions} />
+
+      {dncLead && (
+        <DoNotContactDialog
+          leadId={dncLead.id}
+          leadName={dncLead.businessName}
+          open={!!dncLead}
+          onOpenChange={(open) => { if (!open) setDncLead(null) }}
+        />
+      )}
     </div>
   )
 }

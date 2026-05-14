@@ -9,7 +9,7 @@ import type { Lead, LeadAnalysis, DailyRun, CreateLeadInput } from "@/lib/types"
  * Base URL for Nest API calls.
  * - Browser (default): `/api/backend` → Next rewrites to `NEST_ORIGIN` (same origin).
  * - Override: `NEXT_PUBLIC_API_BASE` (full origin). Legacy: `NEXT_PUBLIC_API_URL`.
- * - Server (RSC / Node): `NEST_ORIGIN`, then `INTERNAL_API_URL`, then `127.0.0.1:3001`.
+ * - Server (RSC / Node): `NEST_ORIGIN`, then `INTERNAL_API_URL`, then `127.0.0.1:4001`.
  */
 export function getApiBaseUrl(): string {
   const publicBase =
@@ -21,7 +21,7 @@ export function getApiBaseUrl(): string {
     process.env.NEST_ORIGIN?.trim() ||
     process.env.INTERNAL_API_URL?.trim() ||
     process.env.BACKEND_PROXY_URL?.trim() ||
-    "http://127.0.0.1:3001"
+    "http://127.0.0.1:4001"
   ).replace(/\/+$/, "")
 }
 

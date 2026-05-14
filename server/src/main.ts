@@ -10,7 +10,7 @@ loadEnv({
   override: false,
 });
 
-/** Port from `node main.js --port 3001` / `nest start -- --port 3001` (Nest forwards args after `--`). */
+/** Port from `node main.js --port 4001` / `nest start -- --port 4001` (Nest forwards args after `--`). */
 function parsePortFromArgv(): number | undefined {
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i += 1) {
@@ -35,7 +35,7 @@ function resolveRequestedPort(): number {
     const n = Number(fromEnv);
     if (Number.isInteger(n) && n > 0) return n;
   }
-  return 3001;
+  return 4001;
 }
 
 async function listenWithPortFallback(
@@ -69,7 +69,7 @@ async function bootstrap() {
     // Dev: allow any origin (LAN IP, alternate hosts) when calling Nest directly.
     // Prod: keep a tight list; same-origin Next proxy is still preferred for the web app.
     origin: prod
-      ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+      ? ['http://localhost:4000', 'http://127.0.0.1:4000']
       : true,
   });
   const requestedPort = resolveRequestedPort();

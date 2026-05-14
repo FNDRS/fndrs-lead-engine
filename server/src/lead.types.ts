@@ -1,4 +1,4 @@
-export type LeadStatus = 'new' | 'analyzed' | 'contacted' | 'rejected';
+export type LeadStatus = 'new' | 'analyzed' | 'contacted' | 'rejected' | 'do_not_contact';
 export type RunStatus = 'running' | 'completed' | 'failed';
 export type ContactMethod = 'call' | 'email';
 export type FollowUpOutcome =
@@ -18,6 +18,7 @@ export interface Lead {
   status: LeadStatus;
   score?: number;
   contactMethod?: ContactMethod | null;
+  doNotContactReason?: string | null;
   promises?: string | null;
   responseNotes?: string | null;
   responded?: boolean;
